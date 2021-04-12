@@ -1,0 +1,203 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7882bd278763c45f49cef7deeae496e5, type: 3}
+  m_Name: Manifest
+  m_EditorClassIdentifier: 
+  activeVariants: []
+  dirs:
+  - Assets/XAsset/Demo/UI/2MainMenu
+  assets:
+  - name: Btn_Character_h.png
+    bundle: 3
+    dir: 0
+  - name: Btn_Character_n.png
+    bundle: 4
+    dir: 0
+  - name: Btn_Character_p.png
+    bundle: 5
+    dir: 0
+  - name: Btn_MainMenu_h.png
+    bundle: 6
+    dir: 0
+  - name: Btn_MainMenu_n.png
+    bundle: 7
+    dir: 0
+  - name: Btn_MainMenu_p.png
+    bundle: 8
+    dir: 0
+  - name: Btn_User_h.png
+    bundle: 9
+    dir: 0
+  - name: Btn_User_n.png
+    bundle: 10
+    dir: 0
+  - name: Btn_User_p.png
+    bundle: 11
+    dir: 0
+  - name: Icon_Character.png
+    bundle: 12
+    dir: 0
+  - name: Icon_Ranking.png
+    bundle: 13
+    dir: 0
+  - name: Icon_Recharge.png
+    bundle: 14
+    dir: 0
+  - name: Icon_Shop.png
+    bundle: 15
+    dir: 0
+  - name: Icon_User.png
+    bundle: 16
+    dir: 0
+  - name: Sci-fi Circle_Large Line.png
+    bundle: 17
+    dir: 0
+  - name: Sci-fi Circle_Large stars.png
+    bundle: 18
+    dir: 0
+  - name: Sci-fi-Circle_Large1.png
+    bundle: 19
+    dir: 0
+  - name: Sci-fi-Circle_Large2.png
+    bundle: 20
+    dir: 0
+  - name: Sci-fi-Circle_Large3.png
+    bundle: 21
+    dir: 0
+  - name: Sci-fi-Circle_Large4.png
+    bundle: 22
+    dir: 0
+  - name: bg_Title.png
+    bundle: 0
+    dir: 0
+  - name: bg_Title1.png
+    bundle: 1
+    dir: 0
+  - name: bg_Title2 .png
+    bundle: 2
+    dir: 0
+  bundles:
+  - name: assets/xasset/demo/ui/2mainmenu/bg_title.png.unity3d
+    id: 0
+    deps: 
+    len: 1134578
+    hash: 0b49fc6eecdaf50ef239069ca62309b6
+  - name: assets/xasset/demo/ui/2mainmenu/bg_title1.png.unity3d
+    id: 1
+    deps: 
+    len: 8575
+    hash: 6ac14c240288ba5137c5b0d0137b3c17
+  - name: assets/xasset/demo/ui/2mainmenu/bg_title2 .png.unity3d
+    id: 2
+    deps: 
+    len: 9772
+    hash: dbe408f9e2a48a0801706d212e20f57f
+  - name: assets/xasset/demo/ui/2mainmenu/btn_character_h.png.unity3d
+    id: 3
+    deps: 
+    len: 10516
+    hash: 4e4981c3bcfe7d9cebb61f436b4fcd84
+  - name: assets/xasset/demo/ui/2mainmenu/btn_character_n.png.unity3d
+    id: 4
+    deps: 
+    len: 5413
+    hash: 57267187273ef62ebb7ee3929a54e988
+  - name: assets/xasset/demo/ui/2mainmenu/btn_character_p.png.unity3d
+    id: 5
+    deps: 
+    len: 10418
+    hash: 3ce7f9dfd7e4c488918fdb05b2fa652e
+  - name: assets/xasset/demo/ui/2mainmenu/btn_mainmenu_h.png.unity3d
+    id: 6
+    deps: 
+    len: 82347
+    hash: f607e536a895c9a5649cd6aea2b5727b
+  - name: assets/xasset/demo/ui/2mainmenu/btn_mainmenu_n.png.unity3d
+    id: 7
+    deps: 
+    len: 81168
+    hash: 9451e47d52856d63b622e7c00ae1c60e
+  - name: assets/xasset/demo/ui/2mainmenu/btn_mainmenu_p.png.unity3d
+    id: 8
+    deps: 
+    len: 82224
+    hash: ed034ab82e543263df02d282eb3e3e7d
+  - name: assets/xasset/demo/ui/2mainmenu/btn_user_h.png.unity3d
+    id: 9
+    deps: 
+    len: 13521
+    hash: 20ee95243a6d28743a4029fcc407588a
+  - name: assets/xasset/demo/ui/2mainmenu/btn_user_n.png.unity3d
+    id: 10
+    deps: 
+    len: 12968
+    hash: 79dd7b1e95b5d9810918fbe8916ed466
+  - name: assets/xasset/demo/ui/2mainmenu/btn_user_p.png.unity3d
+    id: 11
+    deps: 
+    len: 13471
+    hash: d9fff47b55d549c5460cce2748a7ebed
+  - name: assets/xasset/demo/ui/2mainmenu/icon_character.png.unity3d
+    id: 12
+    deps: 
+    len: 5208
+    hash: e1a3bbcf0d8af5da343d06b2320ede0e
+  - name: assets/xasset/demo/ui/2mainmenu/icon_ranking.png.unity3d
+    id: 13
+    deps: 
+    len: 5000
+    hash: 7a2c0ceeae2c77f81a8c11a23c201f1c
+  - name: assets/xasset/demo/ui/2mainmenu/icon_recharge.png.unity3d
+    id: 14
+    deps: 
+    len: 6039
+    hash: a4239f22e41b23329bc523e8cc3a285e
+  - name: assets/xasset/demo/ui/2mainmenu/icon_shop.png.unity3d
+    id: 15
+    deps: 
+    len: 4520
+    hash: b5c5ddeaf53c9f67ce20cdcd177ac393
+  - name: assets/xasset/demo/ui/2mainmenu/icon_user.png.unity3d
+    id: 16
+    deps: 
+    len: 4321
+    hash: 29f4fe0ee5fc5e16cacac2f0f074ff29
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi circle_large line.png.unity3d
+    id: 17
+    deps: 
+    len: 163691
+    hash: 8787d83d311095708f8fa74f0d690b30
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi circle_large stars.png.unity3d
+    id: 18
+    deps: 
+    len: 370879
+    hash: 4410e5123bc166d942e1c564e329e9c7
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi-circle_large1.png.unity3d
+    id: 19
+    deps: 
+    len: 152237
+    hash: 8a43e34f4f457fa23b01bc18ff094078
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi-circle_large2.png.unity3d
+    id: 20
+    deps: 
+    len: 88610
+    hash: 0f3a6a67a4eb511fc88f1bf5b03a4098
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi-circle_large3.png.unity3d
+    id: 21
+    deps: 
+    len: 19090
+    hash: 755a90f9b1f103082a94927b74edf612
+  - name: assets/xasset/demo/ui/2mainmenu/sci-fi-circle_large4.png.unity3d
+    id: 22
+    deps: 
+    len: 51344
+    hash: 481d15ae854f854ce65cac8124e969c8
