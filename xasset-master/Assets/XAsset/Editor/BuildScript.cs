@@ -293,6 +293,7 @@ namespace libx
 
 		private static T GetAsset<T> (string path) where T : ScriptableObject
 		{
+            // 没有就创建
 			var asset = AssetDatabase.LoadAssetAtPath<T> (path);
 			if (asset == null) {
 				asset = ScriptableObject.CreateInstance<T> ();
