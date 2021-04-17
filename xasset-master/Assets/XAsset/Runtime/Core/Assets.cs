@@ -38,6 +38,7 @@ namespace libx
     public sealed class Assets : MonoBehaviour
     {
         public static readonly string ManifestAsset = "Assets/Manifest.asset";
+        // assetbundle 后缀名
         public static readonly string Extension = ".unity3d";
 
         public static bool runtimeMode = true;

@@ -35,19 +35,19 @@ namespace libx
 {
     public enum NameBy
     {
-        Explicit,
-        Path,
-        Directory,
-        TopDirectory
+        Explicit,   // ab包按自定义名字分割, 多个文件合为一个ab包
+        Path,   // ab包按路径分割, 也就是一个文件一个ab(因为一个文件一个路径)
+        Directory,  // ab包按文件夹分割, 有嵌套文件夹则单独区分
+        TopDirectory    // ab包按文件夹分割, 不能有不在子文件夹里的文件
     }
 
     // asset和它所属的bundle,有多少个asset就有多少个 {RuleAsset} 
     [Serializable]
     public class RuleAsset
     {
-        // bundle e.g. "assets/test/3stageselect/test1.unity3d"
+        // ab包名 bundle e.g. "assets/test/3stageselect/test1.unity3d"
         public string bundle;
-        // asset e.g. "Assets/Test/3StageSelect/Test1/bg_Stage1_01.png"
+        // asset名 asset e.g. "Assets/Test/3StageSelect/Test1/bg_Stage1_01.png"
         public string path;
     }
 
@@ -80,38 +80,43 @@ namespace libx
         // e.g. assetbundle的自定义名称
         [Tooltip("Explicit的名称")] public string assetBundleName;
 
-        // 获取 searchPath 下符合 searchPattern 要求的文件
-        public string[] GetAssets()
-        {
-            var patterns = searchPattern.Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries);
+        // 获取 searchPath, 必须是文件夹, 下符合 searchPattern 要求的文件
+        public string[] GetAssets() {
+            // 按 , 分割后缀名
+            var patterns = searchPattern.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
 
             // 判断文件夹是否存在
             // 错误, searchPath 是单独的文件 e.g. Assets/Test/3StageSelect/Battlefield 2.png,
             // 正确, searchPath 是文件夹 e.g. Assets/Test/3StageSelect
-            if (!Directory.Exists(searchPath))
-            {
+            if (!Directory.Exists(searchPath)) {
                 Debug.LogWarning("Rule searchPath not exist:" + searchPath);
                 return new string[0];
             }
 
             var getFiles = new List<string>();
             // 通过不同的后缀名查找文件
-            foreach (var pattern in patterns)
-            {
+            foreach (var pattern in patterns) {
                 var files = Directory.GetFiles(searchPath, pattern, SearchOption.AllDirectories);
-                foreach (var file in files)
-                {
+                foreach (var file in files) {
+                    // 跳过目录
                     if (Directory.Exists(file)) {
                         continue;
                     }
 
+                    // 获取后缀名
                     var ext = Path.GetExtension(file).ToLower();
                     // 跳过非法文件
-                    if ((ext == ".fbx" || ext == ".anim") && !pattern.Contains(ext)) continue;
+                    if ((ext == ".fbx" || ext == ".anim") && !pattern.Contains(ext)) {
+                        continue;
+                    }
 
                     // 跳过非法文件
-                    if (!BuildRules.ValidateAsset(file)) continue;
+                    if (!BuildRules.ValidateAsset(file)) {
+                        continue;
+                    }
+
                     var asset = file.Replace("\\", "/");
+
                     getFiles.Add(asset);
                 }
             }
@@ -122,19 +127,25 @@ namespace libx
 
     public class BuildRules : ScriptableObject
     {
-        // [asset, bundle]
+        // [asset名, bundle名]
         // e.g. [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, assets/test/3stageselect/test1.unity3d]
         private readonly Dictionary<string, string> _asset2Bundles = new Dictionary<string, string>();
+
+        // [budle名, [asset名]], 场景文件和非场景文件放在一个文件夹时
+        // 这个ab包和其所包含的asset数组会被放进 _conflicted里, 供 _duplicated 使用
         private readonly Dictionary<string, string[]> _conflicted = new Dictionary<string, string[]>();
-        // [asset]
-        // 没有设置过 {BuildRule} 的 asset
+
+        // [asset, HashSet<bundle>]
+        // asset 所属的 bundles, 主要是为 计算出_duplicated, 没有别的用处
+        // 如果一个asset被多处引用且没有加入到 _asset2Bundles中， 那这个 asset 就会被加入到 _duplicated
+        private readonly Dictionary<string, HashSet<string>> _tracker = new Dictionary<string, HashSet<string>>();
+
+        // [asset名]
+        // 没有设置过 {BuildRule} 的 asset, 被不同的设置过 {BuildRule} 的asset 引用
         // e.g. Assets/XAsset/Demo/UI/3StageSelect/Battlefield 2.png
         private readonly List<string> _duplicated = new List<string>();
-        // [asset, HashSet<bundle>]
-        // asset 所属的 bundles
-        // e.g.
-        // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, [assets/test/3stageselect/test1.unity3d]]
-        private readonly Dictionary<string, HashSet<string>> _tracker = new Dictionary<string, HashSet<string>>();
+
+
 		[Header("Patterns")]
         // .asset 文件搜索模式
 		public string searchPatternAsset = "*.asset";
@@ -173,12 +184,17 @@ namespace libx
             return version;
         }
 
+        // 解析 Rules.asset
         public void Apply()
         {
             Clear();
+            // 收集 {BuildRule} 下的 asset
             CollectAssets();
+            // 获取依赖, 分析出 _conflicted, _tracker, _duplicated
             AnalysisAssets();
+            // 优化资源
             OptimizeAssets();
+
             Save();
         }
 
@@ -202,19 +218,24 @@ namespace libx
 
         #region Private
 
+        // 排除不符合规则的资源
         internal static bool ValidateAsset(string asset)
         {
-            if (!asset.StartsWith("Assets/")) return false;
+            if (!asset.StartsWith("Assets/")) {
+                return false;
+            }
 
             var ext = Path.GetExtension(asset).ToLower();
             return ext != ".dll" && ext != ".cs" && ext != ".meta" && ext != ".js" && ext != ".boo";
         }
 
+        // 是否是 场景文件
         private static bool IsScene(string asset)
         {
             return asset.EndsWith(".unity");
         }
 
+        // 加密与否, 组合扩展名
         private static string RuledAssetBundleName(string name)
         {
             if (nameByHash)
@@ -227,6 +248,7 @@ namespace libx
         // 记录 asset 所属的 bundles(可能有多个)
         private void Track(string asset, string bundle)
         {
+            // 跟踪  asset 对应的 bundle(s)
             HashSet<string> bundles;
             if (!_tracker.TryGetValue(asset, out bundles))
             {
@@ -235,11 +257,14 @@ namespace libx
             }
 
             bundles.Add(bundle);
+
+            // 单个 asset 被多个 asset 引用
             if (bundles.Count > 1)
             {
                 string bundleName;
                 _asset2Bundles.TryGetValue(asset, out bundleName);
-                // 如果 asset 不在任何 bundle 里, 添加到 duplicated内
+                // 如果 asset 不在任何 bundle 里, 且被 设置过 {BuildRule} 的 不同的asset 引用
+                // 就会添加到 _duplicated 里
                 if (string.IsNullOrEmpty(bundleName))
                 {
                     Debug.Log("Duplicated.Asset: " + asset);
@@ -249,8 +274,8 @@ namespace libx
             }
         }
 
-        // 将 _asset2Bundles 转化为 Dictionary<string, List<string>>
-        // [bundle, asset] e.g.
+        // 将 _asset2Bundles也就是 <asset名, bundle名> 转化为 
+        // 临时的 Dictionary<bundle名, List<asset名>> 返回
         // [assets/test/3stageselect/test1.unity3d, [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, Assets/Test/3StageSelect/Test1/Test11/bg_Stage1_02.png]]
         private Dictionary<string, List<string>> GetBundles()
         {
@@ -265,7 +290,9 @@ namespace libx
                     bundles[bundle] = list;
                 }
 
-                if (!list.Contains(item.Key)) list.Add(item.Key);
+                if (!list.Contains(item.Key)) {
+                    list.Add(item.Key);
+                }
             }
 
             return bundles;
@@ -296,7 +323,7 @@ namespace libx
 
             EditorUtility.ClearProgressBar();
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssets();    
         }
 
         private void OptimizeAssets()
@@ -322,53 +349,68 @@ namespace libx
             }
         }
 
+        // 获取依赖, 分析出 _conflicted, _tracker, _duplicated
         private void AnalysisAssets()
         {
             var getBundles = GetBundles();
+
             int i = 0, max = getBundles.Count;
+
             foreach (var item in getBundles)
             {
                 var bundle = item.Key;
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("分析依赖{0}/{1}", i, max), bundle,
                     i / (float) max)) break;
 
-                // 获取ab包里的文件(可能有多个)
+                // 获取单个ab包里的asset名(可能有多个)
                 var assetPaths = getBundles[bundle];
 
-                // 场景文件判断
-                if (assetPaths.Exists(IsScene) && !assetPaths.TrueForAll(IsScene))
-                    _conflicted.Add(bundle, assetPaths.ToArray());
 
-                // 获取依赖
+
+                // 单个ab包里包含场景文件和非场景文件, 加入到 _conflicted
+                if (assetPaths.Exists(IsScene) && !assetPaths.TrueForAll(IsScene)) {
+                    _conflicted.Add(bundle, assetPaths.ToArray());
+                }
+
+                // 获取 单个 ab包里 所有的 asset的依赖
+                // 这些依赖 形如  Assets/Test/Scenes/Battlefield 2.png
+                // 同时也会自动处理 prefab 嵌套的问题
                 var dependencies = AssetDatabase.GetDependencies(assetPaths.ToArray(), true);
-                if (dependencies.Length > 0)
-                    foreach (var asset in dependencies)
-                        if (ValidateAsset(asset))
+
+
+                if (dependencies.Length > 0) {
+                    foreach (var asset in dependencies) {
+                        if (ValidateAsset(asset)) {
                             Track(asset, bundle);
+                        }
+                    }
+                }
+
                 i++;
             }
         }
 
-        // 通过 BuildRule 获得需要打包的文件路径和该文件所属的assetbundle的名称
-        // 将其转化为 RuleAsset
+        // 通过 BuildRule 获得需要打包的文件路径和该文件所属的assetbundle的名称 将其转化为 RuleAsset
+        // BuildRule 里的路径必须是文件夹
         private void CollectAssets()
         {
-            for (int i = 0, max = rules.Length; i < max; i++)
-            {
+            for (int i = 0, max = rules.Length; i < max; i++) {
                 var rule = rules[i];
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("收集资源{0}/{1}", i, max), rule.searchPath,
-                    i / (float) max))
+                    i / (float)max))
                     break;
+                // 获取每个 BuildRule 下的符合规则的文件
                 ApplyRule(rule);
             }
 
+            // _asset2Bundles 转换为 临时的 List<RuleAsset> 
             var list = new List<RuleAsset>();
             foreach (var item in _asset2Bundles)
-                list.Add(new RuleAsset
-                {
+                list.Add(new RuleAsset {
                     path = item.Key,
                     bundle = item.Value
                 });
+            // 按 asset名 排序
             list.Sort((a, b) => string.Compare(a.path, b.path, StringComparison.Ordinal));
             ruleAssets = list.ToArray();
         }
@@ -388,38 +430,41 @@ namespace libx
             switch (rule.nameBy)
             {
                 // ab包按自定义名字分割, 多个文件合为一个ab包
-                case NameBy.Explicit:
-                {
-                    // nameByHash = false
-                    // e.g.
-                    // [Assets/Test/3StageSelect/Battlefield 2.png, test.unity3d]
-                    // [Assets/Test/3StageSelect/bg_Name1.png, test.unity3d]
-                    // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, test.unity3d]
-                    foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(rule.assetBundleName);
+                case NameBy.Explicit: {
+                        // nameByHash = false
+                        // e.g.
+                        // [Assets/Test/3StageSelect/Battlefield 2.png, test.unity3d]
+                        // [Assets/Test/3StageSelect/bg_Name1.png, test.unity3d]
+                        // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, test.unity3d]
+                        foreach (var asset in assets) {
+                            _asset2Bundles[asset] = RuledAssetBundleName(rule.assetBundleName);
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 // ab包按路径分割, 也就是一个文件一个ab(因为一个文件一个路径)
-                case NameBy.Path:
-                {
-                    // nameByHash = true e.g. [Assets/Test/3StageSelect/Battlefield 2.png, 2a22374f1202ddb786fc83bd496d7e56.unity3d]
-                    // nameByHash = false e.g. [Assets/Test/3StageSelect/Battlefield 2.png, assets/test/3stageselect/battlefield 2.png.unity3d]
-                    foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(asset);
+                case NameBy.Path: {
+                        // nameByHash = true e.g. [Assets/Test/3StageSelect/Battlefield 2.png, 2a22374f1202ddb786fc83bd496d7e56.unity3d]
+                        // nameByHash = false e.g. [Assets/Test/3StageSelect/Battlefield 2.png, assets/test/3stageselect/battlefield 2.png.unity3d]
+                        foreach (var asset in assets) {
+                            _asset2Bundles[asset] = RuledAssetBundleName(asset);
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 // ab包按文件夹分割, 有嵌套文件夹则单独区分
-                case NameBy.Directory:
-                {
-                    // nameByHash = false
-                    // e.g.
-                    // [Assets/Test/3StageSelect/Battlefield 2.png, assets/test/3stageselect.unity3d]
-                    // [Assets/Test/3StageSelect/bg_Name1.png, assets/test/3stageselect.unity3d]
-                    // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, assets/test/3stageselect/test1.unity3d]
-                    foreach (var asset in assets) _asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
+                case NameBy.Directory: {
+                        // nameByHash = false
+                        // e.g.
+                        // [Assets/Test/3StageSelect/Battlefield 2.png, assets/test/3stageselect.unity3d]
+                        // [Assets/Test/3StageSelect/bg_Name1.png, assets/test/3stageselect.unity3d]
+                        // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, assets/test/3stageselect/test1.unity3d]
+                        foreach (var asset in assets) {
+                            _asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 // ab包按文件夹分割, 不能有不在子文件夹里的文件
                 // e.g. 文件结构
                 // 3StageSelect

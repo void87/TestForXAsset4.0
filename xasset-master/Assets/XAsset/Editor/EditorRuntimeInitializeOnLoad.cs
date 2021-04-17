@@ -33,6 +33,7 @@ namespace libx
 {
     public class EditorRuntimeInitializeOnLoad
     {
+        // Editor 在游戏启动时
         [RuntimeInitializeOnLoadMethod]
         private static void OnInitialize()
         {
