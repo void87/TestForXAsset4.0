@@ -1,4 +1,4 @@
-//
+ï»¿//
 // BuildScript.cs
 //
 // Author:
@@ -57,6 +57,7 @@ namespace libx
 			rules.Apply ();
 		}
 
+        // è·å– Rules.asset
 		internal static BuildRules GetBuildRules ()
 		{
 			return GetAsset<BuildRules> ("Assets/Rules.asset");
@@ -241,7 +242,7 @@ namespace libx
 			AssetDatabase.SaveAssets ();
 			AssetDatabase.Refresh ();
 
-            // ½« Assets/Manifest.asset Ò²´ò°ü
+            // å°† Assets/Manifest.asset ä¹Ÿæ‰“åŒ…
             var manifestBundleName = "manifest.unity3d";
 			builds = new[] {
 				new AssetBundleBuild {

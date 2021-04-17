@@ -116,6 +116,7 @@ namespace libx
             AssetDatabase.SaveAssets();
         }
 
+        // 生成 BuildRules, 也就是 Assets/Rules.asset
         [MenuItem(KApplyBuildRules)]
         private static void ApplyBuildRules()
         {

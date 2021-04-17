@@ -136,14 +136,23 @@ namespace libx
         // [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, [assets/test/3stageselect/test1.unity3d]]
         private readonly Dictionary<string, HashSet<string>> _tracker = new Dictionary<string, HashSet<string>>();
 		[Header("Patterns")]
+        // .asset 文件搜索模式
 		public string searchPatternAsset = "*.asset";
+        // .controller 文件搜索模式
 		public string searchPatternController = "*.controller";
+        // 文件夹 文件搜索模式
 		public string searchPatternDir = "*";
+        // 材质文件搜索模式
 		public string searchPatternMaterial = "*.mat";
+        // 图片文件搜索模式
 		public string searchPatternPng = "*.png";
+        // prefab文件搜索模式
 		public string searchPatternPrefab = "*.prefab";
+        // 场景文件搜索模式
 		public string searchPatternScene = "*.unity";
+        // 文本文件搜索模式
 		public string searchPatternText = "*.txt,*.bytes,*.json,*.csv,*.xml,*htm,*.html,*.yaml,*.fnt";
+        // 名字转换为 Hash
         public static bool nameByHash = false;
         
 		[Tooltip("构建的版本号")]

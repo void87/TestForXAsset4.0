@@ -40,4 +40,6 @@ Temp
 DLC
 UnityPackageManager
 /Assets/Manifest.asset
+/Assets/Manifest.asset.meta
 /Assets/Rules.asset
+/Assets/Rules.asset.meta
