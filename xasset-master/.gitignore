@@ -39,3 +39,5 @@ Library
 Temp
 DLC
 UnityPackageManager
+Assets/Manifest.asset
+Assets/Rules.asset
