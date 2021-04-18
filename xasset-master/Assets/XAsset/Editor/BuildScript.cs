@@ -51,35 +51,35 @@ namespace libx
 			EditorUtility.ClearProgressBar ();
 		}
 
+        // 修改 {BuildRules} 也就是Rules.asset
 		internal static void ApplyBuildRules ()
 		{
-			var rules = GetBuildRules ();
-			rules.Apply ();
+            var rules = GetBuildRules();
+            rules.Apply();
 		}
 
         // 获取 Rules.asset
-		internal static BuildRules GetBuildRules ()
-		{
-			return GetAsset<BuildRules> ("Assets/Rules.asset");
-		} 
+        // {BuildRules} 对应 Rules.asset
+        internal static BuildRules GetBuildRules() {
+            return GetAsset<BuildRules>("Assets/Rules.asset");
+        }
 
-		public static void CopyAssetBundlesTo (string path)
-		{ 
-			var files = new[] {
-				Versions.Dataname,
-				Versions.Filename,
-			};  
-			if (!Directory.Exists (path)) {
-				Directory.CreateDirectory (path);
-			} 
-			foreach (var item in files) {
-				var src = outputPath + "/" + item;
-				var dest = Application.streamingAssetsPath + "/" + item;
-				if (File.Exists (src)) {
-					File.Copy (src, dest, true);
-				}
-			}
-		}
+        public static void CopyAssetBundlesTo(string path) {
+            var files = new[] {
+                Versions.ResName,
+                Versions.VerName,
+            };
+            if (!Directory.Exists(path)) {
+                Directory.CreateDirectory(path);
+            }
+            foreach (var item in files) {
+                var src = outputPath + "/" + item;
+                var dest = Application.streamingAssetsPath + "/" + item;
+                if (File.Exists(src)) {
+                    File.Copy(src, dest, true);
+                }
+            }
+        }
 
 		public static string GetPlatformName ()
 		{
@@ -165,97 +165,132 @@ namespace libx
 #endif
 		}
 
-		public static string CreateAssetBundleDirectory ()
-		{
-			// Choose the output path according to the build target.
-			if (!Directory.Exists (outputPath))
-				Directory.CreateDirectory (outputPath);
+        // 创建 ab 目录
+        public static string CreateAssetBundleDirectory() {
+            // Choose the output path according to the build target.
+            if (!Directory.Exists(outputPath))
+                Directory.CreateDirectory(outputPath);
 
-			return outputPath;
-		}
+            return outputPath;
+        }
 
-		public static void BuildAssetBundles ()
-		{
-			// Choose the output path according to the build target.
-			var outputPath = CreateAssetBundleDirectory ();
-			const BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression;
-			var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
-			var rules = GetBuildRules ();
-			var builds = rules.GetBuilds ();
-			var assetBundleManifest = BuildPipeline.BuildAssetBundles (outputPath, builds, options, targetPlatform);
-			if (assetBundleManifest == null) {
-				return;
-			}
+        public static void BuildAssetBundles() {
+            // 创建 ab 目录
+            var outputPath = CreateAssetBundleDirectory();
+            // ChunkBasedCompression
+            const BuildAssetBundleOptions options = BuildAssetBundleOptions.ChunkBasedCompression;
+            // 获取生成ab的平台
+            var targetPlatform = EditorUserBuildSettings.activeBuildTarget;
+            // 获取 Rules.asset
+            var buildRules = GetBuildRules();
+            // 将 RuleBundle[] 转化为 AssetBundleBuild[]
+            var assetBundleBuilds = buildRules.GetBuilds();
+            // 第一次打包
+            // 调用 官方API 开始打包, 生成 官方的 AssetBundleManifest
+            // 也就是 ab包 输出目录下的  {目录名.manifest}
+            //
+            // 官方自己的 API 会自动处理 需要打包的文件的变化
+            // 如果没有变化是不会重新打 bundle 的
+            // AssetBundleManifest 这个文件 每次打包都会重新生成
+            AssetBundleManifest assetBundleManifest = BuildPipeline.BuildAssetBundles(outputPath, assetBundleBuilds, options, targetPlatform);
 
-			var manifest = GetManifest ();
-			var dirs = new List<string> ();
-			var assets = new List<AssetRef> ();
+            if (assetBundleManifest == null) {
+                return;
+            }
+
+            // 获取 {Manifest} 也就是 Asssets/Manifest.asset
+            Manifest manifest = GetManifest();
+            // 目录
+            var dirs = new List<string>();
+            // 
+            List<AssetRef> assetRefList = new List<AssetRef>();
+            // 通过 官方的 AssetBundleManifest 获取 所有的 bundle 名
             // e.g. [assets/test/3stageselect/test1.unity3d, assets/test/3stageselect/test2.unity3d]
-			var bundles = assetBundleManifest.GetAllAssetBundles ();
+            string[] bundleNameArray = assetBundleManifest.GetAllAssetBundles();
 
-            // e.g. [assets/test/3stageselect/test1.unity3d, 0]
-			var bundle2Ids = new Dictionary<string, int> ();
-			for (var index = 0; index < bundles.Length; index++) {
-				var bundle = bundles [index];
-				bundle2Ids [bundle] = index;
-			}
+            // 用一个 Map 记录 bundle名字,id
+            Dictionary<string, int> bundleName2IdMap = new Dictionary<string, int>();
+            for (var index = 0; index < bundleNameArray.Length; index++) {
+                var bundle = bundleNameArray[index];
+                // e.g. [assets/test/3stageselect/test1.unity3d, 0]
+                bundleName2IdMap[bundle] = index;
+            }
 
-			var bundleRefs = new List<BundleRef> ();
-			for (var index = 0; index < bundles.Length; index++) {
-				var bundle = bundles [index];
-				var deps = assetBundleManifest.GetAllDependencies (bundle);
-				var path = string.Format ("{0}/{1}", outputPath, bundle);
-				if (File.Exists (path)) {
-					using (var stream = File.OpenRead (path)) {
-						bundleRefs.Add (new BundleRef {
-							name = bundle,
-							id = index,
-							deps = Array.ConvertAll (deps, input => bundle2Ids [input]),
-							len = stream.Length,
-							hash = assetBundleManifest.GetAssetBundleHash (bundle).ToString (),
-						});
-					}
-				} else {
-					Debug.LogError (path + " file not exsit.");
-				}
-			}
+            var bundleRefs = new List<BundleRef>();
+            for (var index = 0; index < bundleNameArray.Length; index++) {
+                var bundle = bundleNameArray[index];
+                // 通过 官方的 AssetBundleManifest 获取 单个 bundle 的 依赖
+                string[] deps = assetBundleManifest.GetAllDependencies(bundle);
 
-			for (var i = 0; i < rules.ruleAssets.Length; i++) {
-				var item = rules.ruleAssets [i];
-				var path = item.path;
-				var dir = Path.GetDirectoryName (path).Replace("\\", "/");
-				var index = dirs.FindIndex (o => o.Equals (dir));
-				if (index == -1) {
-					index = dirs.Count;
-					dirs.Add (dir);
-				}
+                var path = string.Format("{0}/{1}", outputPath, bundle);
+                if (File.Exists(path)) {
+                    // 读取指定路径的 bundle
+                    using (var stream = File.OpenRead(path)) {
+                        bundleRefs.Add(new BundleRef {
+                            name = bundle,  // bundle 名
+                            id = index, // bundleNameArray 中的索引
+                            // 获取 所有 依赖 的  索引
+                            deps = Array.ConvertAll(deps, input => bundleName2IdMap[input]),
+                            // 通过 FileStream 获取 文件的 大小
+                            len = stream.Length,
+                            // 通过 官方的 AssetBundleManifest 获取 bundle 的 hash
+                            hash = assetBundleManifest.GetAssetBundleHash(bundle).ToString(),
+                        });
+                    }
+                } else {
+                    Debug.LogError(path + " file not exsit.");
+                }
+            }
 
-				var asset = new AssetRef { bundle = bundle2Ids [item.bundle], dir = index, name = Path.GetFileName (path) };
-				assets.Add (asset);
-			}
+            for (var i = 0; i < buildRules.ruleAssets.Length; i++) {
+                var item = buildRules.ruleAssets[i];
+                var path = item.path;
+                // 获取asset 所在的目录
+                string dir = Path.GetDirectoryName(path).Replace("\\", "/");
+                var index = dirs.FindIndex(o => o.Equals(dir));
+                if (index == -1) {
+                    index = dirs.Count;
+                    // 添加到 目录 集合
+                    dirs.Add(dir);
+                }
 
-			manifest.dirs = dirs.ToArray ();
-			manifest.assets = assets.ToArray ();
-			manifest.bundles = bundleRefs.ToArray ();
+                AssetRef assetRef = new AssetRef {
+                    bundle = bundleName2IdMap[item.bundle], // bundle 索引
+                    dir = index,    // 目录索引
+                    name = Path.GetFileName(path)   // asset名
+                };
+                assetRefList.Add(assetRef);
+            }
 
-			EditorUtility.SetDirty (manifest);
-			AssetDatabase.SaveAssets ();
-			AssetDatabase.Refresh ();
+            manifest.dirs = dirs.ToArray();
+            manifest.assetRefArray = assetRefList.ToArray();
+            manifest.bundleRefArray = bundleRefs.ToArray();
 
-            // 将 Assets/Manifest.asset 也打包
+            EditorUtility.SetDirty(manifest);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            // 自定义 Assets/Manifest.asset, bunlde 名为 manifest.unity3d
             var manifestBundleName = "manifest.unity3d";
-			builds = new[] {
-				new AssetBundleBuild {
-					assetNames = new[] { AssetDatabase.GetAssetPath (manifest), },
-					assetBundleName = manifestBundleName
-				}
-			};
+            assetBundleBuilds = new[] {
+                new AssetBundleBuild {
+                    assetNames = new[] {
+                        AssetDatabase.GetAssetPath (manifest)
+                    },
+                    assetBundleName = manifestBundleName
+                }
+            };
 
-			BuildPipeline.BuildAssetBundles (outputPath, builds, options, targetPlatform);
-			ArrayUtility.Add (ref bundles, manifestBundleName);  
+            // 第二次打包, 将 Assets/Manifest.asset 打包为 manifest.unity3d
+            // 如果 Assets/Manifest.asset 没有变化,就不会重新打包这个 bundle
+            BuildPipeline.BuildAssetBundles(outputPath, assetBundleBuilds, options, targetPlatform);
 
-			Versions.BuildVersions (outputPath, bundles, GetBuildRules ().AddVersion ());
-		}
+            // 将 manifest.untiy3d 添加到 bundleNameArray
+            ArrayUtility.Add(ref bundleNameArray, manifestBundleName);
+
+            // 先创建 res, 再创建 ver, 每次打包都会重新创建这个文件
+            Versions.BuildVersions(outputPath, bundleNameArray, GetBuildRules().AddVersion());
+        }
 
 		private static string GetBuildTargetName (BuildTarget target)
 		{
@@ -291,19 +326,19 @@ namespace libx
 			}
 		}
 
-		private static T GetAsset<T> (string path) where T : ScriptableObject
-		{
+        private static T GetAsset<T>(string path) where T : ScriptableObject {
             // 没有就创建
-			var asset = AssetDatabase.LoadAssetAtPath<T> (path);
-			if (asset == null) {
-				asset = ScriptableObject.CreateInstance<T> ();
-				AssetDatabase.CreateAsset (asset, path);
-				AssetDatabase.SaveAssets ();
-			}
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null) {
+                asset = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(asset, path);
+                AssetDatabase.SaveAssets();
+            }
 
-			return asset;
-		} 
+            return asset;
+        }
 
+        // 获取 {Manifest} 也就是 Manifest.asset
 		public static Manifest GetManifest ()
 		{
 			return GetAsset<Manifest> (Assets.ManifestAsset);

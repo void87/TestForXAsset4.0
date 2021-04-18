@@ -33,78 +33,66 @@ using Debug = UnityEngine.Debug;
 
 namespace libx
 {
-    public static class MenuItems
-    {
+    public static class MenuItems {
         private const string KApplyBuildRules = "Assets/Bundles/Build Rules";
         private const string KBuildAssetBundles = "Assets/Bundles/Build Bundles";
         private const string KBuildPlayer = "Assets/Bundles/Build Player";
-		private const string KViewDataPath = "Assets/Bundles/View Bundles";
+        private const string KViewDataPath = "Assets/Bundles/View Bundles";
         private const string KCopyBundles = "Assets/Bundles/Copy Bundles";
 
         [MenuItem("Assets/Apply Rule/Text", false, 1)]
-        private static void ApplyRuleText()
-        {
+        private static void ApplyRuleText() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternText);
         }
 
         [MenuItem("Assets/Apply Rule/Prefab", false, 1)]
-        private static void ApplyRulePrefab()
-        {
+        private static void ApplyRulePrefab() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternPrefab);
         }
 
         [MenuItem("Assets/Apply Rule/Png", false, 1)]
-        private static void ApplyRulePng()
-        {
+        private static void ApplyRulePng() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternPng);
         }
 
         [MenuItem("Assets/Apply Rule/Material", false, 1)]
-        private static void ApplyRuleMaterial()
-        {
+        private static void ApplyRuleMaterial() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternMaterial);
         }
 
         [MenuItem("Assets/Apply Rule/Controller", false, 1)]
-        private static void ApplyRuleController()
-        {
+        private static void ApplyRuleController() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternController);
         }
 
         [MenuItem("Assets/Apply Rule/Asset", false, 1)]
-        private static void ApplyRuleAsset()
-        {
+        private static void ApplyRuleAsset() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternAsset);
         }
 
         [MenuItem("Assets/Apply Rule/Scene", false, 1)]
-        private static void ApplyRuleScene()
-        {
+        private static void ApplyRuleScene() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternScene);
         }
 
         [MenuItem("Assets/Apply Rule/Directory", false, 1)]
-        private static void ApplyRuleDir()
-        {
+        private static void ApplyRuleDir() {
             var rules = BuildScript.GetBuildRules();
             AddRulesForSelection(rules, rules.searchPatternDir);
         }
 
-        private static void AddRulesForSelection(BuildRules rules, string searchPattern)
-        {
+        private static void AddRulesForSelection(BuildRules rules, string searchPattern) {
             var isDir = rules.searchPatternDir.Equals(searchPattern);
-            foreach (var item in Selection.objects)
-            {
+            foreach (var item in Selection.objects) {
                 var path = AssetDatabase.GetAssetPath(item);
-                var rule = new BuildRule
-                {
+                var rule = new BuildRule {
                     searchPath = path,
                     searchPattern = searchPattern,
                     nameBy = isDir ? NameBy.Directory : NameBy.Path
@@ -118,8 +106,7 @@ namespace libx
 
         // 生成 BuildRules, 也就是 Assets/Rules.asset
         [MenuItem(KApplyBuildRules)]
-        private static void ApplyBuildRules()
-        {
+        private static void ApplyBuildRules() {
             var watch = new Stopwatch();
             watch.Start();
             BuildScript.ApplyBuildRules();
@@ -127,12 +114,12 @@ namespace libx
             Debug.Log("ApplyBuildRules " + watch.ElapsedMilliseconds + " ms.");
         }
 
+        // 生成BuildRule, 生成AssetBundle
         [MenuItem(KBuildAssetBundles)]
-        private static void BuildAssetBundles()
-        {
+        private static void BuildAssetBundles() {
             var watch = new Stopwatch();
             watch.Start();
-			BuildScript.ApplyBuildRules ();
+            BuildScript.ApplyBuildRules();
             BuildScript.BuildAssetBundles();
             watch.Stop();
             Debug.Log("BuildAssetBundles " + watch.ElapsedMilliseconds + " ms.");

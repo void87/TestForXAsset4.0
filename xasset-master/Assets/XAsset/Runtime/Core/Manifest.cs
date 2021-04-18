@@ -27,11 +27,9 @@
 using System;
 using UnityEngine;
 
-namespace libx
-{
+namespace libx {
     [Serializable]
-    public class AssetRef
-    {
+    public class AssetRef {
         // asset名称 e.g. bg_Stage1_02.png
         public string name;
         // asset所属的bundle的索引
@@ -41,8 +39,7 @@ namespace libx
     }
 
     [Serializable]
-    public class BundleRef
-    {
+    public class BundleRef {
         // bundle名称 e.g. assets/test/3stageselect/test1.unity3d
         public string name;
         // bundle索引 e.g. 0
@@ -58,14 +55,13 @@ namespace libx
         public string hash;
     }
 
-    public class Manifest : ScriptableObject
-    {
+    public class Manifest : ScriptableObject {
         public string[] activeVariants = new string[0];
         // 目录列表
         // e.g.
         // [Assets/Test/3StageSelect/Test1/Test11]
         public string[] dirs = new string[0];
-        public AssetRef[] assets = new AssetRef[0];
-        public BundleRef[] bundles = new BundleRef[0];
+        public AssetRef[] assetRefArray = new AssetRef[0];
+        public BundleRef[] bundleRefArray = new BundleRef[0];
     }
 }

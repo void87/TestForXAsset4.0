@@ -167,9 +167,9 @@ namespace libx
         {
             _activeVariants.AddRange(manifest.activeVariants); 
             
-            var assets = manifest.assets;
+            var assets = manifest.assetRefArray;
             var dirs = manifest.dirs;
-            var bundles = manifest.bundles;
+            var bundles = manifest.bundleRefArray;
 
             foreach (var item in bundles)
                 _bundleToDependencies[item.name] = Array.ConvertAll(item.deps, id => bundles[id].name);

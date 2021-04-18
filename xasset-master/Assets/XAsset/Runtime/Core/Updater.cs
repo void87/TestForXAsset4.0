@@ -284,7 +284,7 @@ namespace libx
         {
             if (enableVFS)
             {
-                var path = string.Format("{0}{1}", _savePath, Versions.Dataname);
+                var path = string.Format("{0}{1}", _savePath, Versions.ResName);
                 if (!File.Exists(path))
                 {
                     // 开启 VFS, 只下载 文件[0] 也就是 res
@@ -362,7 +362,7 @@ namespace libx
 
             if (_step == Step.Coping)
             {
-                var path = _savePath + Versions.Filename + ".tmp";
+                var path = _savePath + Versions.VerName + ".tmp";
                 var versions = Versions.LoadVersions(path);
                 var basePath = GetStreamingAssetsPath() + "/";
                 yield return UpdateCopy(versions, basePath);
@@ -421,8 +421,8 @@ namespace libx
 
 
             // 下载ver e.g. http://192.168.5.121/DLC/Windows/ver
-            var request = UnityWebRequest.Get(GetDownloadURL(Versions.Filename));
-            request.downloadHandler = new DownloadHandlerFile(_savePath + Versions.Filename);
+            var request = UnityWebRequest.Get(GetDownloadURL(Versions.VerName));
+            request.downloadHandler = new DownloadHandlerFile(_savePath + Versions.VerName);
             yield return request.SendWebRequest();
             var error = request.error;
             request.Dispose();
@@ -443,7 +443,7 @@ namespace libx
             try
             {
                 // 在 ver 里读取需要下载的 {VFile}
-                _versions = Versions.LoadVersions(_savePath + Versions.Filename, true);
+                _versions = Versions.LoadVersions(_savePath + Versions.VerName, true);
                 if (_versions.Count > 0)
                 {
                     PrepareDownloads();
@@ -491,12 +491,12 @@ namespace libx
         // 是否将资源从 streamingAssetsPath 拷贝到 persistentDataPath
         private IEnumerator RequestCopy()
         {
-            var v1 = Versions.LoadVersion(_savePath + Versions.Filename);
+            var v1 = Versions.LoadVersion(_savePath + Versions.VerName);
             var basePath = GetStreamingAssetsPath() + "/";
             // e.g. file:///D:/Projects/UnityProjecvts/xasset-master/Assets/StreamingAssets/ver
-            var request = UnityWebRequest.Get(basePath + Versions.Filename);
+            var request = UnityWebRequest.Get(basePath + Versions.VerName);
             // e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/ver.tmp
-            var path = _savePath + Versions.Filename + ".tmp";
+            var path = _savePath + Versions.VerName + ".tmp";
             request.downloadHandler = new DownloadHandlerFile(path);
             yield return request.SendWebRequest();
             if (string.IsNullOrEmpty(request.error))
@@ -524,7 +524,7 @@ namespace libx
         private IEnumerator UpdateCopy(IList<VFile> versions, string basePath)
         {
             var version = versions[0];
-            if (version.name.Equals(Versions.Dataname))
+            if (version.name.Equals(Versions.ResName))
             {
                 var request = UnityWebRequest.Get(basePath + version.name);
                 request.downloadHandler = new DownloadHandlerFile(_savePath + version.name);
@@ -557,7 +557,7 @@ namespace libx
         {
             if (enableVFS)
             {
-                var dataPath = _savePath + Versions.Dataname;
+                var dataPath = _savePath + Versions.ResName;
                 var downloads = _downloader.downloads;
                 if (downloads.Count > 0 && File.Exists(dataPath))
                 {
@@ -574,7 +574,7 @@ namespace libx
                     }
 
                     var file = files[0];
-                    if (!file.name.Equals(Versions.Dataname))
+                    if (!file.name.Equals(Versions.ResName))
                     {
                         Versions.UpdateDisk(dataPath, files);
                     }
@@ -585,7 +585,7 @@ namespace libx
 
             OnProgress(1);
             OnMessage("更新完成");
-            var version = Versions.LoadVersion(_savePath + Versions.Filename);
+            var version = Versions.LoadVersion(_savePath + Versions.VerName);
             if (version > 0)
             {
                 OnVersion(version.ToString());

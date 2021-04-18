@@ -55,9 +55,9 @@ namespace libx
     [Serializable]
     public class RuleBundle
     {
-        // asset e.g. "assets/test/3stageselect/test1.unity3d"
+        // bundle名 e.g. "assets/test/3stageselect/test1.unity3d"
         public string name;
-        // bundle e.g. ["Assets/Test/3StageSelect/Test1.bg_Stage1_01.png", "Assets/Test/3StageSelect/Test1/Test11/bg_Stage1_02.png"]
+        // asset名 e.g. ["Assets/Test/3StageSelect/Test1.bg_Stage1_01.png", "Assets/Test/3StageSelect/Test1/Test11/bg_Stage1_02.png"]
         public string[] assets;
     }
 
@@ -194,18 +194,15 @@ namespace libx
             AnalysisAssets();
             // 优化资源
             OptimizeAssets();
-
+            // 保存 Builrules
             Save();
         }
 
         // 将 RuleBundle[] 转化为 AssetBundleBuild[]
-        public AssetBundleBuild[] GetBuilds()
-        {
+        public AssetBundleBuild[] GetBuilds() {
             var builds = new List<AssetBundleBuild>();
-            foreach (var bundle in ruleBundles)
-            {
-                builds.Add(new AssetBundleBuild
-                {
+            foreach (var bundle in ruleBundles) {
+                builds.Add(new AssetBundleBuild {
                     assetNames = bundle.assets,
                     assetBundleName = bundle.name
                 });
@@ -246,6 +243,8 @@ namespace libx
         }
 
         // 记录 asset 所属的 bundles(可能有多个)
+        // 添加 _tracker 记录
+        // 添加 _duplicated 记录
         private void Track(string asset, string bundle)
         {
             // 跟踪  asset 对应的 bundle(s)
@@ -277,15 +276,12 @@ namespace libx
         // 将 _asset2Bundles也就是 <asset名, bundle名> 转化为 
         // 临时的 Dictionary<bundle名, List<asset名>> 返回
         // [assets/test/3stageselect/test1.unity3d, [Assets/Test/3StageSelect/Test1/bg_Stage1_01.png, Assets/Test/3StageSelect/Test1/Test11/bg_Stage1_02.png]]
-        private Dictionary<string, List<string>> GetBundles()
-        {
+        private Dictionary<string, List<string>> GetBundles() {
             var bundles = new Dictionary<string, List<string>>();
-            foreach (var item in _asset2Bundles)
-            {
+            foreach (var item in _asset2Bundles) {
                 var bundle = item.Value;
                 List<string> list;
-                if (!bundles.TryGetValue(bundle, out list))
-                {
+                if (!bundles.TryGetValue(bundle, out list)) {
                     list = new List<string>();
                     bundles[bundle] = list;
                 }
@@ -306,15 +302,13 @@ namespace libx
             _asset2Bundles.Clear();
         }
 
-        private void Save()
-        {
+        private void Save() {
             var getBundles = GetBundles();
+            // 每个 bundle 一个 RuleBulde
             ruleBundles = new RuleBundle[getBundles.Count];
             var i = 0;
-            foreach (var item in getBundles)
-            {
-                ruleBundles[i] = new RuleBundle
-                {
+            foreach (var item in getBundles) {
+                ruleBundles[i] = new RuleBundle {
                     name = item.Key,
                     assets = item.Value.ToArray()
                 };
@@ -323,28 +317,31 @@ namespace libx
 
             EditorUtility.ClearProgressBar();
             EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();    
+            AssetDatabase.SaveAssets();
         }
 
-        private void OptimizeAssets()
-        {
+        private void OptimizeAssets() {
+            // _conflicted 中的 非场景文件 加入到 _duplicated中
             int i = 0, max = _conflicted.Count;
-            foreach (var item in _conflicted)
-            {
+            foreach (var item in _conflicted) {
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冲突{0}/{1}", i, max), item.Key,
-                    i / (float) max)) break;
+                    i / (float)max)) break;
                 var list = item.Value;
-                foreach (var asset in list)
-                    if (!IsScene(asset))
+                foreach (var asset in list) {
+                    if (!IsScene(asset)) {
                         _duplicated.Add(asset);
+                    }
+                }
                 i++;
             }
 
-            for (i = 0, max = _duplicated.Count; i < max; i++)
-            {
+            // 处理每个 _duplicated
+            for (i = 0, max = _duplicated.Count; i < max; i++) {
                 var item = _duplicated[i];
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冗余{0}/{1}", i, max), item,
-                    i / (float) max)) break;
+                    i / (float)max)) {
+                    break;
+                }
                 OptimizeAsset(item);
             }
         }
@@ -415,12 +412,16 @@ namespace libx
             ruleAssets = list.ToArray();
         }
 
+        // 优化asset
         private void OptimizeAsset(string asset)
         {
-            if (asset.EndsWith(".shader"))
+            // 所有的 shader 放到 单独的 shader bundle 中
+            if (asset.EndsWith(".shader")) {
                 _asset2Bundles[asset] = RuledAssetBundleName("shaders");
-            else
+            // 没每个asset 单独设置 bundle
+            } else {
                 _asset2Bundles[asset] = RuledAssetBundleName(asset);
+            }
         }
 
         // 通过 BuildRule 查找文件信息，将这些文件信息存放到 _asset2Bundles

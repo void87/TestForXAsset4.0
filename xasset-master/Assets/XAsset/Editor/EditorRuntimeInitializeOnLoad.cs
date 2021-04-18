@@ -35,43 +35,38 @@ namespace libx
     {
         // Editor 在游戏启动时
         [RuntimeInitializeOnLoadMethod]
-        private static void OnInitialize()
-        {
-			Assets.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
-            Assets.loadDelegate = AssetDatabase.LoadAssetAtPath; 
+        private static void OnInitialize() {
+            Assets.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
+            Assets.loadDelegate = AssetDatabase.LoadAssetAtPath;
             var assets = new List<string>();
             var rules = BuildScript.GetBuildRules();
-            foreach (var asset in rules.scenesInBuild)
-            {
+            foreach (var asset in rules.scenesInBuild) {
                 var path = AssetDatabase.GetAssetPath(asset);
-                if (string.IsNullOrEmpty(path))
-                {
+                if (string.IsNullOrEmpty(path)) {
                     continue;
                 }
-                assets.Add(path); 
-            } 
-            foreach (var rule in rules.rules)
-            {
-                if (rule.searchPattern.Contains("*.unity"))
-                {
+                assets.Add(path);
+            }
+            foreach (var rule in rules.rules) {
+                if (rule.searchPattern.Contains("*.unity")) {
                     assets.AddRange(rule.GetAssets());
                 }
-            }  
+            }
             var scenes = new EditorBuildSettingsScene[assets.Count];
-            for (var index = 0; index < assets.Count; index++)
-            {
-                var asset = assets[index]; 
+            for (var index = 0; index < assets.Count; index++) {
+                var asset = assets[index];
                 scenes[index] = new EditorBuildSettingsScene(asset, true);
             }
             EditorBuildSettings.scenes = scenes;
         }
 
+        // 编辑器启动, 不是游戏启动
         [InitializeOnLoadMethod]
         private static void OnEditorInitialize()
         {
             EditorUtility.ClearProgressBar();
-            // BuildScript.GetManifest();
-            // BuildScript.GetBuildRules();
+            //BuildScript.GetManifest();
+            //BuildScript.GetBuildRules();
         }
     }
 }

@@ -54,9 +54,9 @@ namespace libx
 
 		public void Serialize (BinaryWriter writer)
 		{
-			writer.Write (name);
-			writer.Write (len);
-			writer.Write (hash);
+			writer.Write (name);    // 写入 名字 e.g. assets/test/prefab1.unity3d
+            writer.Write (len); // 写入 长度 
+			writer.Write (hash);    // 写入 crc
 		}
 
 		public void Deserialize (BinaryReader reader)
@@ -67,6 +67,7 @@ namespace libx
         }
 	}
 
+    // 虚拟硬盘
 	public class VDisk
 	{
 		private readonly byte[] _buffers = new byte[1024 * 4];
@@ -87,11 +88,11 @@ namespace libx
 			return files.Count > 0;
 		}
 
-		private void AddFile (VFile file)
-		{
-			_data [file.name] = file;
-			files.Add (file);
-		}
+        // 添加 _data, files
+        private void AddFile(VFile file) {
+            _data[file.name] = file;
+            files.Add(file);
+        }
 
 		public void AddFile (string path, long len, string hash)
 		{ 
@@ -99,20 +100,25 @@ namespace libx
 			AddFile (file);
 		}
 
+        // 写入所有的 VFile 内容
 		private void WriteFile (string path, BinaryWriter writer)
 		{
+            // 读取对应的bundle
 			using (var fs = File.OpenRead (path)) {
 				var len = fs.Length;
 				WriteStream (len, fs, writer);
 			}
 		}
 
+        // 写入单个 VFile 内容
 		private void WriteStream (long len, Stream stream, BinaryWriter writer)
 		{
 			var count = 0L;
 			while (count < len) {
 				var read = (int)Math.Min (len - count, _buffers.Length);
+                // 从  bundle 里 读取 内容 到 _buffers
 				stream.Read (_buffers, 0, read);
+                // 将 _buffers 里的内容 写入到 res
 				writer.Write (_buffers, 0, read);
 				count += read;
 			}
@@ -204,15 +210,31 @@ namespace libx
 			} 
 		}
 
-		public void Save ()
+        // res 格式
+        // 
+        // VFile.Count
+        //
+        // VFile.name, VFile.len, VFile.crc
+        // VFile.name, VFile.len, VFile.crc
+        // 
+        // {VFile(binary)}
+        // {VFile(binary)}
+        public void Save ()
 		{
+            // 获取 ab包 所在的 目录名
 			var dir = Path.GetDirectoryName (name);   
+            // 建立一个 res 文件，准备开始写入,  覆盖以前的 res
 			using (var stream = File.OpenWrite (name)) {
 				var writer = new BinaryWriter (stream);
+                // 向 res 写入 VFile 数量
 				writer.Write (files.Count);
+
+                // 每个 VFile 依次写入 res, 包括  name, len, crc
 				foreach (var item in files) {
 					item.Serialize (writer);
 				}  
+
+                // 将每个 VFile 对应的bundle 内容 写入到 res
 				foreach (var item in files) {
 					var path = dir + "/" + item.name;
 					WriteFile (path, writer);

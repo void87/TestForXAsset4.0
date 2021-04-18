@@ -29,8 +29,8 @@ namespace libx
             return 0 == comparer.Compare(input, hash);
         }
 
-        public static string GetCRC32Hash(Stream input)
-        {
+        // 计算 Stream 的 CRC
+        public static string GetCRC32Hash(Stream input) {
             var data = crc32.ComputeHash(input);
             return ToHash(data);
         }
