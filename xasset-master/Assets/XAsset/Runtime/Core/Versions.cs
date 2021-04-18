@@ -43,22 +43,23 @@ namespace libx
 		public const string VerName = "ver";
 		public static  readonly  VerifyBy verifyBy = VerifyBy.Hash;
 		private static readonly VDisk _disk = new VDisk ();
+        // 更新的 Vfile
 		private static readonly Dictionary<string, VFile> _updateData = new Dictionary<string, VFile> ();
+        // 当前的 VFile
 		private static readonly Dictionary<string, VFile> _baseData = new Dictionary<string, VFile> ();
 
-		public static AssetBundle LoadAssetBundleFromFile (string url)
-		{
-			if (!File.Exists (url)) {
-				if (_disk != null) {
-					var name = Path.GetFileName (url);
-					var file = _disk.GetFile (name, string.Empty);
-					if (file != null) {
-						return AssetBundle.LoadFromFile (_disk.name, 0, (ulong)file.offset);
-					}
-				}	
-			}   
-			return AssetBundle.LoadFromFile (url);
-		}
+        public static AssetBundle LoadAssetBundleFromFile(string url) {
+            if (!File.Exists(url)) {
+                if (_disk != null) {
+                    var name = Path.GetFileName(url);
+                    var file = _disk.GetFile(name, string.Empty);
+                    if (file != null) {
+                        return AssetBundle.LoadFromFile(_disk.name, 0, (ulong)file.offset);
+                    }
+                }
+            }
+            return AssetBundle.LoadFromFile(url);
+        }
 
 		public static AssetBundleCreateRequest LoadAssetBundleFromFileAsync (string url)
 		{
@@ -74,6 +75,7 @@ namespace libx
 			return AssetBundle.LoadFromFileAsync (url);
 		}
 
+        // 生成 res, ver 文件
         public static void BuildVersions(string outputPath, string[] bundles, int version) {
             // e.g. DLC/Windows/ver
             var verPath = outputPath + "/" + VerName;
@@ -108,6 +110,8 @@ namespace libx
             // 
             // version
             //
+            // VFile 的数量
+            //
             // VFile.name, VFile.len, VFile.crc (单独的 res)
             // VFile.name, VFile.len, VFile.crc
             // VFile.name, VFile.len, VFile.crc
@@ -120,7 +124,7 @@ namespace libx
                 // 写入 VFile 数量, +1 表示还要写入 res 的信息
                 writer.Write(disk.files.Count + 1);
 
-                // 将 res 也作为 VFile 写入到 version 中
+                // 先 将 res 也作为 VFile 写入到 version 中, res 文件是第一个 VFile
                 using (var fs = File.OpenRead(resPath)) {
                     var file = new VFile {
                         name = ResName,
@@ -156,35 +160,50 @@ namespace libx
 			} 
 		}
 
+        // 通过 ver 读取 List<VFile> 并返回, 另外会将 VFile 读取到  _updateData || _baseData
+        // 三种情况, 按执行顺序排列
+        // S 目录版本号 大于 P 目录, 且执行 从 S 目录 拷贝到 P 目录的功能, 从P 目录 加载 VFile 到 Version._baseData
+        // S 目录版本号 不大于 P目录,  从 P 目录加载 VFile 加载到 Version._baseData
+        // 
 		public static List<VFile> LoadVersions (string filename, bool update = false)
 		{
+            // 获取 ver 文件的目录
             var rootDir = Path.GetDirectoryName(filename);
+            // 将 VFile 存到 _updateData || baseData
 			var data = update ? _updateData : _baseData;
+            // 清空旧数据,如果有的话
 			data.Clear ();
+
 			using (var stream = File.OpenRead (filename)) {
 				var reader = new BinaryReader (stream);
 				var list = new List<VFile> ();
                 // 读取版本信息
 				var ver = reader.ReadInt32 ();
 				Debug.Log ("LoadVersions:" + ver);
-                // 读取bundle数量
+                // 读取 VFile 数量
 				var count = reader.ReadInt32 ();
+
 				for (var i = 0; i < count; i++) {
-					var version = new VFile ();
+                    // 读取 ver 里的 二进制信息, 反序列化为 VFIle
+                    var version = new VFile ();
 					version.Deserialize (reader);
 					list.Add (version);
-					data [version.name] = version;
+
+                    // 将 VFile 添加到 _updateData || baseData
+                    data[version.name] = version;
+
+                    // 获取 ver 文件所属的文件夹
                     var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(version.name));
 
-                    // 这里会根据 bundle 路径 创建文件夹
-                    if (! Directory.Exists(dir))
-                    {
+                    // 创建 ver 文件所属的文件夹
+                    if (!Directory.Exists(dir)) {
                         Directory.CreateDirectory(dir);
                     }
 				} 
 				return list;
 			}
-		} 
+		}
+
 		public static void UpdateDisk(string savePath, List<VFile> newFiles)
 		{
 			var saveFiles = new List<VFile> ();
@@ -197,44 +216,55 @@ namespace libx
 			_disk.Update(savePath, newFiles, saveFiles);
 		}
 
-		public static bool LoadDisk (string filename)
-		{
-			return _disk.Load (filename);
-		}
+        // 加载 res 文件
+        public static bool LoadDisk(string filename) {
+            return _disk.Load(filename);
+        }
 
-		public static bool IsNew (string path, long len, string hash)
+        // 根据 文件名，长度， CRC 判断 需不需要下载
+        // path e.g. C:/Users/void87/AppData/LocalLow/xasset/xasset/DLC/assets/test/prefab2.unity3d
+        public static bool IsNew (string path, long len, string hash)
 		{
 			VFile file;
 
-			var key = Path.GetFileName (path);
+            // 获取文件名, e.g. prefab2.unity3d
+            var key = Path.GetFileName (path);
 
-            // res 比较
-			if (_baseData.TryGetValue (key, out file)) {
-				if (key.Equals (ResName) ||
-				    file.len == len && file.hash.Equals (hash, StringComparison.OrdinalIgnoreCase)) {
-					return false;
-				}
-			}
+            // 在 Versions._baseData 里获取 VFile
+            if (_baseData.TryGetValue(key, out file)) {
+                // 文件名 为 res, 跳过
+                // 文件名 相同 且 len 和 CRC 都相等, 也跳过
+                if (key.Equals(ResName) || file.len == len && file.hash.Equals(hash, StringComparison.OrdinalIgnoreCase)) {
+                    return false;
+                }
+            }
 
-            // 获取同名旧文件进行比较
-			if (_disk.Exists ()) {
-				var vdf = _disk.GetFile (path, hash);
-				if (vdf != null && vdf.len == len && vdf.hash.Equals (hash, StringComparison.OrdinalIgnoreCase)) {
-					return false;
-				}
-			}
+            // disck 中有 VFile
+            if (_disk.Exists()) {
+                // 通过 path 获取 VFile
+                var vdf = _disk.GetFile(path, hash);
+                if (vdf != null && vdf.len == len && vdf.hash.Equals(hash, StringComparison.OrdinalIgnoreCase)) {
+                    return false;
+                }
+            }
 
             // 本地不存在旧文件
-			if (!File.Exists (path)) {
-				return true;
-			}
+            if (!File.Exists(path)) {
+                return true;
+            }
 
+            // 读取 path 对应的
 			using (var stream = File.OpenRead (path)) {
+                //  长度不一样, 是新文件
 				if (stream.Length != len) {
 					return true;
 				} 
+
+                // 没有启用 CRC 直接返回 false, 表示不是新文件
 				if (verifyBy != VerifyBy.Hash)
 					return false;
+
+                // 判断 CRC 是否一样
 				return !Utility.GetCRC32Hash (stream).Equals (hash, StringComparison.OrdinalIgnoreCase);
 			}
 		} 

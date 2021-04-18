@@ -31,25 +31,21 @@ using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-public class MessageBox : IEnumerator
-{
+public class MessageBox : IEnumerator {
     public bool isOk { get; private set; }
 
     private bool _visible = true;
 
     #region IEnumerator implementation
 
-    public bool MoveNext()
-    {
+    public bool MoveNext() {
         return _visible;
     }
 
-    public void Reset()
-    {
+    public void Reset() {
     }
 
-    public object Current
-    {
+    public object Current {
         get { return null; }
     }
 
@@ -66,27 +62,22 @@ public class MessageBox : IEnumerator
     private static readonly List<MessageBox> _showed = new List<MessageBox>();
     private static readonly List<MessageBox> _hidden = new List<MessageBox>();
 
-    public static void Dispose()
-    {
-        foreach (var item in _hidden)
-        {
+    public static void Dispose() {
+        foreach (var item in _hidden) {
             item.Destroy();
         }
 
-        _hidden.Clear(); 
+        _hidden.Clear();
 
-        foreach (var item in _showed)
-        {
+        foreach (var item in _showed) {
             item.Destroy();
         }
 
-        _showed.Clear(); 
+        _showed.Clear();
     }
 
-    public static void CloseAll()
-    {
-        for (var index = 0; index < _showed.Count; index++)
-        {
+    public static void CloseAll() {
+        for (var index = 0; index < _showed.Count; index++) {
             var messageBox = _showed[index];
             messageBox.Hide();
             _hidden.Add(messageBox);
@@ -94,24 +85,20 @@ public class MessageBox : IEnumerator
         _showed.Clear();
     }
 
-    public static MessageBox Show(string title, string content, string ok = "确定", string no = "取消")
-    {
-        if (_hidden.Count > 0)
-        {
+    // 
+    public static MessageBox Show(string title, string content, string ok = "确定", string no = "取消") {
+        if (_hidden.Count > 0) {
             var mb = _hidden[0];
             mb.Init(title, content, ok, no);
             mb.gameObject.SetActive(true);
             _hidden.RemoveAt(0);
             return mb;
-        }
-        else
-        {
+        } else {
             return new MessageBox(title, content, ok, no);
         }
     }
 
-    private void Destroy()
-    {
+    private void Destroy() {
         _title = null;
         _textOk = null;
         _textNo = null;
@@ -120,8 +107,7 @@ public class MessageBox : IEnumerator
         gameObject = null;
     }
 
-    private MessageBox(string title, string content, string ok, string no)
-    {
+    private MessageBox(string title, string content, string ok, string no) {
         gameObject = Object.Instantiate(_prefab);
         gameObject.name = title;
 
@@ -138,8 +124,7 @@ public class MessageBox : IEnumerator
         Init(title, content, ok, no);
     }
 
-    private void Init(string title, string content, string ok, string no)
-    {
+    private void Init(string title, string content, string ok, string no) {
         _title.text = title;
         _content.text = content;
         _textOk.text = ok;
@@ -149,34 +134,28 @@ public class MessageBox : IEnumerator
         isOk = false;
     }
 
-    public enum EventId
-    {
+    public enum EventId {
         Ok,
         No,
     }
 
     public Action<EventId> onComplete { get; set; }
 
-    private T GetComponent<T>(string path) where T : Component
-    {
+    private T GetComponent<T>(string path) where T : Component {
         var trans = gameObject.transform.Find(path);
         return trans.GetComponent<T>();
     }
 
-    private void OnClickNo()
-    {
+    private void OnClickNo() {
         HandleEvent(EventId.No);
     }
 
-    private void OnClickOk()
-    {
+    private void OnClickOk() {
         HandleEvent(EventId.Ok);
     }
 
-    private void HandleEvent(EventId id)
-    {
-        switch (id)
-        {
+    private void HandleEvent(EventId id) {
+        switch (id) {
             case EventId.Ok:
                 break;
             case EventId.No:
@@ -194,15 +173,13 @@ public class MessageBox : IEnumerator
         onComplete = null;
     }
 
-    public void Close()
-    {
+    public void Close() {
         Hide();
         _hidden.Add(this);
         _showed.Remove(this);
     }
 
-    private void Hide()
-    {
+    private void Hide() {
         gameObject.SetActive(false);
         _visible = false;
     }

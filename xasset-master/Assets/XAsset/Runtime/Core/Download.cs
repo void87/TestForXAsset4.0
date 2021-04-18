@@ -52,6 +52,7 @@ namespace libx
 
         #endregion
 
+        // 下载文件的索引
         public int id { get; set; }
 
         public string error { get; private set; }
@@ -59,7 +60,7 @@ namespace libx
         // 下载文件的长度
         public long len { get; set; }
 
-        // 下载文件的哈希
+        // 下载文件的crc
         public string hash { get; set; }
 
         // 下载文件的 url
@@ -72,10 +73,8 @@ namespace libx
         public string name { get; set; }
 
         // e.g. C:\\Users\\void8\\AppData\\LocalLow\\xasset\\xasset\\DLC\\assets\\xasset\\demo\\scenes/eb6aa3c5
-        public string tempPath
-        {
-            get
-            { 
+        public string tempPath {
+            get {
                 var dir = Path.GetDirectoryName(savePath);
                 return string.Format("{0}/{1}", dir, hash);
             }
@@ -158,18 +157,14 @@ namespace libx
             }
         }
 
-        public void Update()
-        {
-            if (_running)
-            {
-                if (_request.isDone && _request.downloadedBytes < (ulong)len)
-                {
+        public void Update() {
+            if (_running) {
+                if (_request.isDone && _request.downloadedBytes < (ulong)len) {
                     error = "unknown error: downloadedBytes < len";
                 }
-                if (!string.IsNullOrEmpty(_request.error))
-                {
+                if (!string.IsNullOrEmpty(_request.error)) {
                     error = _request.error;
-                } 
+                }
             }
         }
 

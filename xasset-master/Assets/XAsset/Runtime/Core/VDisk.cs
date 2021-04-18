@@ -34,7 +34,7 @@ namespace libx
 {
 	public class VFile
 	{
-        // e.g. 75ac4c10
+        // crc e.g. 75ac4c10
         public string hash { get; set; }
         
 		public long id { get; set; }
@@ -45,6 +45,7 @@ namespace libx
         // 文件名也就是 bundle 名 e.g. assets/xasset/demo/scenes.unity3d
         public string name { get; set; }
 
+        // 读取 ab 包时的 偏移
 		public long offset { get; set; }
 
 		public VFile ()
@@ -61,9 +62,9 @@ namespace libx
 
 		public void Deserialize (BinaryReader reader)
 		{
-			name = reader.ReadString ();
-			len = reader.ReadInt64 ();
-			hash = reader.ReadString ();
+			name = reader.ReadString ();    // 读取 名字
+			len = reader.ReadInt64 ();  // 读取长度
+			hash = reader.ReadString (); // 读取 CRC
         }
 	}
 
@@ -72,8 +73,10 @@ namespace libx
 	{
 		private readonly byte[] _buffers = new byte[1024 * 4];
         // [bundle,{VFile}] e.g. [assets/xasset/demo/scenes.unity3d, {name: assets/xasset/demo/scenes.unity3d, len: 126794, hash: c1f7fbc8 }]
+        // Bundle VFile 字典
         private readonly Dictionary<string, VFile> _data = new Dictionary<string, VFile> ();
 		private readonly List<VFile> _files = new List<VFile>();
+        // VFile 字典
 		public  List<VFile> files { get { return _files; }}
 		public string name { get; set; } 
 		private long _pos;
@@ -83,10 +86,9 @@ namespace libx
 		{
 		}
 
-		public bool Exists ()
-		{
-			return files.Count > 0;
-		}
+        public bool Exists() {
+            return files.Count > 0;
+        }
 
         // 添加 _data, files
         private void AddFile(VFile file) {
@@ -124,27 +126,31 @@ namespace libx
 			}
 		}
 
-		public bool Load (string path)
-		{
-			if (!File.Exists (path))
-				return false;
+        // 通过 res  初始化 VDisk
+        public bool Load(string path) {
+            if (!File.Exists(path))
+                return false;
 
-			Clear ();
+            Clear();
 
-			name = path;
-			using (var reader = new BinaryReader (File.OpenRead (path))) {
-				var count = reader.ReadInt32 ();
-				for (var i = 0; i < count; i++) {
+            name = path;
+            // 读取 P 目录下的 res 文件
+            using (var reader = new BinaryReader(File.OpenRead(path))) {
+                // 读取
+                var count = reader.ReadInt32();
+
+                for (var i = 0; i < count; i++) {
                     // 读取的时候给 VFile 设置 id
-					var file = new VFile { id = i };
-					file.Deserialize (reader);
-					AddFile (file); 
-				} 
-				_pos = reader.BaseStream.Position;  
-			}
-			Reindex ();
-			return true;
-		}
+                    var file = new VFile { id = i };
+                    // 反序列化 VFile
+                    file.Deserialize(reader);
+                    AddFile(file);
+                }
+                _pos = reader.BaseStream.Position;
+            }
+            Reindex();
+            return true;
+        }
 
 		public void Reindex ()
 		{
@@ -154,15 +160,15 @@ namespace libx
 				file.offset = _pos + _len;
 				_len += file.len;
 			}
-		} 
-
-		public VFile GetFile (string path, string hash)
-		{
-			var key = Path.GetFileName (path);
-			VFile file;
-			_data.TryGetValue (key, out file);
-			return file;
 		}
+
+        // 通过 path 获取
+        public VFile GetFile(string path, string hash) {
+            var key = Path.GetFileName(path);
+            VFile file;
+            _data.TryGetValue(key, out file);
+            return file;
+        }
 
 		public void Update(string dataPath, List<VFile> newFiles, List<VFile> saveFiles)
 		{
@@ -242,6 +248,7 @@ namespace libx
 			} 
 		}
 
+        // 
 		public void Clear ()
 		{
 			_data.Clear ();

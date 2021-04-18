@@ -27,49 +27,50 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace libx
-{
-    public class UpdateScreen : MonoBehaviour, IUpdater
-    {
+namespace libx {
+    // 更新UI, Updater.listener
+    public class UpdateScreen : MonoBehaviour, IUpdater {
         public Text version;
         public Slider progressBar;
         public Text progressText;
         public Button buttonStart;
 
-        private void Start()
-        {
+        private void Start() {
             version.text = "APP: 4.0\nRES：1";
-			var updater = FindObjectOfType<Updater> ();
-			updater.listener = this; 
+            var updater = FindObjectOfType<Updater>();
+            updater.listener = this;
         }
 
         #region IUpdateManager implementation
 
-        public void OnStart()
-        {
+        // Updater.OnStart->this.OnStart
+        public void OnStart() {
             buttonStart.gameObject.SetActive(false);
         }
 
-        public void OnMessage(string msg)
-        {
+        // Updater.OnMessage->this.OnMessage
+        // 显示进度文本
+        public void OnMessage(string msg) {
             progressText.text = msg;
         }
 
-        public void OnProgress(float progress)
-        {
+        // Updater.OnProgress->this.OnProgress
+        // 显示进度条
+        public void OnProgress(float progress) {
             progressBar.value = progress;
         }
 
-        public void OnVersion(string ver)
-        {
+        // Updater.OnVersion->this.OnVersion
+        // 显示版本
+        public void OnVersion(string ver) {
             version.text = "APP: 4.0\nRES: " + ver;
         }
 
-
-        public void OnClear()
-        {
+        // Updater.OnClear->this.OnClear
+        public void OnClear() {
             buttonStart.gameObject.SetActive(true);
-        } 
+        }
+
         #endregion
     }
 }

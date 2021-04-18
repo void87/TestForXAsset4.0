@@ -36,6 +36,8 @@ namespace libx
         // Editor 在游戏启动时
         [RuntimeInitializeOnLoadMethod]
         private static void OnInitialize() {
+            Debug.Log("RuntimeInitalizeOnLoadMethod");
+
             Assets.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
             Assets.loadDelegate = AssetDatabase.LoadAssetAtPath;
             var assets = new List<string>();
