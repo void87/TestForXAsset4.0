@@ -1,4 +1,4 @@
-//
+ï»¿//
 // Versions.cs
 //
 // Author:
@@ -43,9 +43,9 @@ namespace libx
 		public const string VerName = "ver";
 		public static  readonly  VerifyBy verifyBy = VerifyBy.Hash;
 		private static readonly VDisk _disk = new VDisk ();
-        // ¸üĞÂµÄ Vfile
+        // æ›´æ–°çš„ Vfile
 		private static readonly Dictionary<string, VFile> _updateData = new Dictionary<string, VFile> ();
-        // µ±Ç°µÄ VFile
+        // å½“å‰çš„ VFile
 		private static readonly Dictionary<string, VFile> _baseData = new Dictionary<string, VFile> ();
 
         public static AssetBundle LoadAssetBundleFromFile(string url) {
@@ -75,7 +75,7 @@ namespace libx
 			return AssetBundle.LoadFromFileAsync (url);
 		}
 
-        // Éú³É res, ver ÎÄ¼ş
+        // ç”Ÿæˆ res, ver æ–‡ä»¶
         public static void BuildVersions(string outputPath, string[] bundles, int version) {
             // e.g. DLC/Windows/ver
             var verPath = outputPath + "/" + VerName;
@@ -90,41 +90,41 @@ namespace libx
 
             VDisk disk = new VDisk();
 
-            // ½« bundle µÄĞÅÏ¢ ÒÔ {VFile} µÄĞÎÊ½ Ìí¼Óµ½ {VDisk}
+            // å°† bundle çš„ä¿¡æ¯ ä»¥ {VFile} çš„å½¢å¼ æ·»åŠ åˆ° {VDisk}
             foreach (var fileName in bundles) {
                 // e.g. DLC/Windows/assets/xasset/demo/scenes.unity3d
                 using (FileStream fs = File.OpenRead(outputPath + "/" + fileName)) {
-                    // ÎÄ¼şÃû£¬ ÎÄ¼ş³¤¶È, CRC
+                    // æ–‡ä»¶åï¼Œ æ–‡ä»¶é•¿åº¦, CRC
                     disk.AddFile(fileName, fs.Length, Utility.GetCRC32Hash(fs));
                 }
             }
 
             // DLC/Windows/res
             disk.name = resPath;
-            // ±£´æ res
+            // ä¿å­˜ res
             disk.Save();
 
-            // ±£´æ ver   e.g. DLC/Windows/ver
+            // ä¿å­˜ ver   e.g. DLC/Windows/ver
             // 
-            // verµÄ¸ñÊ½
+            // verçš„æ ¼å¼
             // 
             // version
             //
-            // VFile µÄÊıÁ¿
+            // VFile çš„æ•°é‡
             //
-            // VFile.name, VFile.len, VFile.crc (µ¥¶ÀµÄ res)
+            // VFile.name, VFile.len, VFile.crc (å•ç‹¬çš„ res)
             // VFile.name, VFile.len, VFile.crc
             // VFile.name, VFile.len, VFile.crc
             //
-            // ¶ÁÈ¡ ver, ¸²¸ÇÒÔÇ°µÄ ver
+            // è¯»å– ver, è¦†ç›–ä»¥å‰çš„ ver
             using (var stream = File.OpenWrite(verPath)) {
                 var writer = new BinaryWriter(stream);
-                // Ğ´Èë°æ±¾ºÅ
+                // å†™å…¥ç‰ˆæœ¬å·
                 writer.Write(version);
-                // Ğ´Èë VFile ÊıÁ¿, +1 ±íÊ¾»¹ÒªĞ´Èë res µÄĞÅÏ¢
+                // å†™å…¥ VFile æ•°é‡, +1 è¡¨ç¤ºè¿˜è¦å†™å…¥ res çš„ä¿¡æ¯
                 writer.Write(disk.files.Count + 1);
 
-                // ÏÈ ½« res Ò²×÷Îª VFile Ğ´Èëµ½ version ÖĞ, res ÎÄ¼şÊÇµÚÒ»¸ö VFile
+                // å…ˆ å°† res ä¹Ÿä½œä¸º VFile å†™å…¥åˆ° version ä¸­, res æ–‡ä»¶æ˜¯ç¬¬ä¸€ä¸ª VFile
                 using (var fs = File.OpenRead(resPath)) {
                     var file = new VFile {
                         name = ResName,
@@ -134,14 +134,14 @@ namespace libx
                     file.Serialize(writer);
                 }
 
-                // Ğ´Èë VFile µÄĞÅÏ¢ µ½ version
+                // å†™å…¥ VFile çš„ä¿¡æ¯ åˆ° version
                 foreach (var file in disk.files) {
                     file.Serialize(writer);
                 }
             }
         }
 
-        // ¼ÓÔØ ver ÎÄ¼şÖĞµÄ°æ±¾ĞÅÏ¢
+        // åŠ è½½ ver æ–‡ä»¶ä¸­çš„ç‰ˆæœ¬ä¿¡æ¯
 		public static int LoadVersion (string filename)
 		{
 			if (!File.Exists (filename))
@@ -160,42 +160,42 @@ namespace libx
 			} 
 		}
 
-        // Í¨¹ı ver ¶ÁÈ¡ List<VFile> ²¢·µ»Ø, ÁíÍâ»á½« VFile ¶ÁÈ¡µ½  _updateData || _baseData
-        // ÈıÖÖÇé¿ö, °´Ö´ĞĞË³ĞòÅÅÁĞ
-        // S Ä¿Â¼°æ±¾ºÅ ´óÓÚ P Ä¿Â¼, ÇÒÖ´ĞĞ ´Ó S Ä¿Â¼ ¿½±´µ½ P Ä¿Â¼µÄ¹¦ÄÜ, ´ÓP Ä¿Â¼ ¼ÓÔØ VFile µ½ Version._baseData
-        // S Ä¿Â¼°æ±¾ºÅ ²»´óÓÚ PÄ¿Â¼,  ´Ó P Ä¿Â¼¼ÓÔØ VFile ¼ÓÔØµ½ Version._baseData
+        // é€šè¿‡ ver è¯»å– List<VFile> å¹¶è¿”å›, å¦å¤–ä¼šå°† VFile è¯»å–åˆ°  _updateData || _baseData
+        // ä¸‰ç§æƒ…å†µ, æŒ‰æ‰§è¡Œé¡ºåºæ’åˆ—
+        // S ç›®å½•ç‰ˆæœ¬å· å¤§äº P ç›®å½•, ä¸”æ‰§è¡Œ ä» S ç›®å½• æ‹·è´åˆ° P ç›®å½•çš„åŠŸèƒ½, ä»P ç›®å½• åŠ è½½ VFile åˆ° Version._baseData
+        // S ç›®å½•ç‰ˆæœ¬å· ä¸å¤§äº Pç›®å½•,  ä» P ç›®å½•åŠ è½½ VFile åŠ è½½åˆ° Version._baseData
         // 
 		public static List<VFile> LoadVersions (string filename, bool update = false)
 		{
-            // »ñÈ¡ ver ÎÄ¼şµÄÄ¿Â¼
+            // è·å– ver æ–‡ä»¶çš„ç›®å½•
             var rootDir = Path.GetDirectoryName(filename);
-            // ½« VFile ´æµ½ _updateData || baseData
+            // å°† VFile å­˜åˆ° _updateData || baseData
 			var data = update ? _updateData : _baseData;
-            // Çå¿Õ¾ÉÊı¾İ,Èç¹ûÓĞµÄ»°
+            // æ¸…ç©ºæ—§æ•°æ®,å¦‚æœæœ‰çš„è¯
 			data.Clear ();
 
 			using (var stream = File.OpenRead (filename)) {
 				var reader = new BinaryReader (stream);
 				var list = new List<VFile> ();
-                // ¶ÁÈ¡°æ±¾ĞÅÏ¢
+                // è¯»å–ç‰ˆæœ¬ä¿¡æ¯
 				var ver = reader.ReadInt32 ();
 				Debug.Log ("LoadVersions:" + ver);
-                // ¶ÁÈ¡ VFile ÊıÁ¿
+                // è¯»å– VFile æ•°é‡
 				var count = reader.ReadInt32 ();
 
 				for (var i = 0; i < count; i++) {
-                    // ¶ÁÈ¡ ver ÀïµÄ ¶ş½øÖÆĞÅÏ¢, ·´ĞòÁĞ»¯Îª VFIle
+                    // è¯»å– ver é‡Œçš„ äºŒè¿›åˆ¶ä¿¡æ¯, ååºåˆ—åŒ–ä¸º VFIle
                     var version = new VFile ();
 					version.Deserialize (reader);
 					list.Add (version);
 
-                    // ½« VFile Ìí¼Óµ½ _updateData || baseData
+                    // å°† VFile æ·»åŠ åˆ° _updateData || baseData
                     data[version.name] = version;
 
-                    // »ñÈ¡ ver ÎÄ¼şËùÊôµÄÎÄ¼ş¼Ğ
+                    // è·å– ver æ–‡ä»¶æ‰€å±çš„æ–‡ä»¶å¤¹
                     var dir = string.Format("{0}/{1}", rootDir, Path.GetDirectoryName(version.name));
 
-                    // ´´½¨ ver ÎÄ¼şËùÊôµÄÎÄ¼ş¼Ğ
+                    // åˆ›å»º ver æ–‡ä»¶æ‰€å±çš„æ–‡ä»¶å¤¹
                     if (!Directory.Exists(dir)) {
                         Directory.CreateDirectory(dir);
                     }
@@ -216,55 +216,55 @@ namespace libx
 			_disk.Update(savePath, newFiles, saveFiles);
 		}
 
-        // ¼ÓÔØ res ÎÄ¼ş
+        // åŠ è½½ res æ–‡ä»¶
         public static bool LoadDisk(string filename) {
             return _disk.Load(filename);
         }
 
-        // ¸ù¾İ ÎÄ¼şÃû£¬³¤¶È£¬ CRC ÅĞ¶Ï Ğè²»ĞèÒªÏÂÔØ
+        // æ ¹æ® æ–‡ä»¶åï¼Œé•¿åº¦ï¼Œ CRC åˆ¤æ–­ éœ€ä¸éœ€è¦ä¸‹è½½
         // path e.g. C:/Users/void87/AppData/LocalLow/xasset/xasset/DLC/assets/test/prefab2.unity3d
         public static bool IsNew (string path, long len, string hash)
 		{
 			VFile file;
 
-            // »ñÈ¡ÎÄ¼şÃû, e.g. prefab2.unity3d
+            // è·å–æ–‡ä»¶å, e.g. prefab2.unity3d
             var key = Path.GetFileName (path);
 
-            // ÔÚ Versions._baseData Àï»ñÈ¡ VFile
+            // åœ¨ Versions._baseData é‡Œè·å– VFile
             if (_baseData.TryGetValue(key, out file)) {
-                // ÎÄ¼şÃû Îª res, Ìø¹ı
-                // ÎÄ¼şÃû ÏàÍ¬ ÇÒ len ºÍ CRC ¶¼ÏàµÈ, Ò²Ìø¹ı
+                // æ–‡ä»¶å ä¸º res, è·³è¿‡
+                // æ–‡ä»¶å ç›¸åŒ ä¸” len å’Œ CRC éƒ½ç›¸ç­‰, ä¹Ÿè·³è¿‡
                 if (key.Equals(ResName) || file.len == len && file.hash.Equals(hash, StringComparison.OrdinalIgnoreCase)) {
                     return false;
                 }
             }
 
-            // disck ÖĞÓĞ VFile
+            // disck ä¸­æœ‰ VFile
             if (_disk.Exists()) {
-                // Í¨¹ı path »ñÈ¡ VFile
+                // é€šè¿‡ path è·å– VFile
                 var vdf = _disk.GetFile(path, hash);
                 if (vdf != null && vdf.len == len && vdf.hash.Equals(hash, StringComparison.OrdinalIgnoreCase)) {
                     return false;
                 }
             }
 
-            // ±¾µØ²»´æÔÚ¾ÉÎÄ¼ş
+            // æœ¬åœ°ä¸å­˜åœ¨æ—§æ–‡ä»¶
             if (!File.Exists(path)) {
                 return true;
             }
 
-            // ¶ÁÈ¡ path ¶ÔÓ¦µÄ
+            // è¯»å– path å¯¹åº”çš„
 			using (var stream = File.OpenRead (path)) {
-                //  ³¤¶È²»Ò»Ñù, ÊÇĞÂÎÄ¼ş
+                //  é•¿åº¦ä¸ä¸€æ ·, æ˜¯æ–°æ–‡ä»¶
 				if (stream.Length != len) {
 					return true;
 				} 
 
-                // Ã»ÓĞÆôÓÃ CRC Ö±½Ó·µ»Ø false, ±íÊ¾²»ÊÇĞÂÎÄ¼ş
+                // æ²¡æœ‰å¯ç”¨ CRC ç›´æ¥è¿”å› false, è¡¨ç¤ºä¸æ˜¯æ–°æ–‡ä»¶
 				if (verifyBy != VerifyBy.Hash)
 					return false;
 
-                // ÅĞ¶Ï CRC ÊÇ·ñÒ»Ñù
+                // åˆ¤æ–­ CRC æ˜¯å¦ä¸€æ ·
 				return !Utility.GetCRC32Hash (stream).Equals (hash, StringComparison.OrdinalIgnoreCase);
 			}
 		} 
