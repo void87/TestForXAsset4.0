@@ -37,6 +37,7 @@ namespace libx
 {
     public sealed class Assets : MonoBehaviour
     {
+        // 自定义 Manifest
         public static readonly string ManifestAsset = "Assets/Manifest.asset";
         // assetbundle 后缀名
         public static readonly string Extension = ".unity3d";
@@ -73,22 +74,22 @@ namespace libx
             _searchPaths.Add(path);
         }
 
-        public static ManifestRequest Initialize()
-        {
+        public static ManifestRequest Initialize() {
+            
+            // 添加 Assets
             var instance = FindObjectOfType<Assets>();
-            if (instance == null)
-            {
+            if (instance == null) {
                 instance = new GameObject("Assets").AddComponent<Assets>();
                 DontDestroyOnLoad(instance.gameObject);
-            } 
+            }
 
-            if (string.IsNullOrEmpty(basePath))
-            {
+            // basePath == S 目录
+            if (string.IsNullOrEmpty(basePath)) {
                 basePath = Application.streamingAssetsPath + Path.DirectorySeparatorChar;
             }
 
-            if (string.IsNullOrEmpty(updatePath))
-            {
+            // updatePath == P 目录
+            if (string.IsNullOrEmpty(updatePath)) {
                 updatePath = Application.persistentDataPath + Path.DirectorySeparatorChar;
             }
 
@@ -98,7 +99,7 @@ namespace libx
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
                 runtimeMode, basePath, updatePath));
 
-            var request = new ManifestRequest {name = ManifestAsset};
+            var request = new ManifestRequest { name = ManifestAsset };
             AddAssetRequest(request);
             return request;
         }
@@ -188,8 +189,10 @@ namespace libx
             }
         }
 
+        // 所有的 AssetRequest
         private static Dictionary<string, AssetRequest> _assets = new Dictionary<string, AssetRequest>();
 
+        // 正在加载的 AssetRequest
         private static List<AssetRequest> _loadingAssets = new List<AssetRequest>();
 
         private static List<SceneAssetRequest> _scenes = new List<SceneAssetRequest>();
@@ -245,8 +248,8 @@ namespace libx
             }
         }
 
-        private static void AddAssetRequest(AssetRequest request)
-        {
+        // 添加到 _assets, _loadingAssets
+        private static void AddAssetRequest(AssetRequest request) {
             _assets.Add(request.name, request);
             _loadingAssets.Add(request);
             request.Load();

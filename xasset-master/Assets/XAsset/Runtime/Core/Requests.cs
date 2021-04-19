@@ -35,8 +35,7 @@ using Object = UnityEngine.Object;
 
 namespace libx
 {
-    public enum LoadState
-    {
+    public enum LoadState {
         // 初始化
         Init,
         // 加载 bunlde 中
@@ -49,53 +48,49 @@ namespace libx
         Unload
     }
 
-    public class AssetRequest : Reference, IEnumerator
-    {
+    // Asset 请求
+    public class AssetRequest : Reference, IEnumerator {
+
         private LoadState _loadState = LoadState.Init;
         private List<Object> _requires;
         public Type assetType;
 
+        // 请求完毕后的 回调
         public Action<AssetRequest> completed;
         // BundleRequest&BundleRequestAsync    e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/ui/1loadingpage.unity3d
         // AssetRequest&AssetRequestAsync   e.g. Assets/XAsset/Demo/UI/1LoadingPage/Title2_bg.png
         // SceneRequest&SceneRequestAsync   e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/scenes.unity3d
         public string name;
 
-        public AssetRequest()
-        {
+        public AssetRequest() {
             asset = null;
             loadState = LoadState.Init;
         }
 
-        public LoadState loadState
-        {
+        public LoadState loadState {
             get { return _loadState; }
-            protected set
-            {
+            protected set {
                 _loadState = value;
-                if (value == LoadState.Loaded)
-                {
+                if (value == LoadState.Loaded) {
                     Complete();
                 }
             }
         }
 
-        private void Complete()
-        {
-            if (completed != null)
-            {
+        private void Complete() {
+            if (completed != null) {
                 completed(this);
                 completed = null;
             }
         }
 
-        public virtual bool isDone
-        {
-            get { return loadState == LoadState.Loaded || loadState == LoadState.Unload; }
+        public virtual bool isDone {
+            get {
+                return loadState == LoadState.Loaded || loadState == LoadState.Unload;
+            }
         }
 
-        public virtual float progress
-        {
+        public virtual float progress {
             get { return 1; }
         }
 
@@ -108,15 +103,12 @@ namespace libx
         // BundleRequest&BundleRequestAsync typeof(asset) = AssetBundle
         public Object asset { get; internal set; }
 
-        private bool checkRequires
-        {
+        private bool checkRequires {
             get { return _requires != null; }
         }
 
-        private void UpdateRequires()
-        {
-            for (var i = 0; i < _requires.Count; i++)
-            {
+        private void UpdateRequires() {
+            for (var i = 0; i < _requires.Count; i++) {
                 var item = _requires[i];
                 if (item != null)
                     continue;
@@ -129,16 +121,17 @@ namespace libx
                 _requires = null;
         }
 
-        internal virtual void Load()
-        {
-            if (!Assets.runtimeMode && Assets.loadDelegate != null)
+        internal virtual void Load() {
+            if (!Assets.runtimeMode && Assets.loadDelegate != null) {
                 asset = Assets.loadDelegate(name, assetType);
-            if (asset == null) error = "error! file not exist:" + name;
+            }
+            if (asset == null) {
+                error = "error! file not exist:" + name;
+            }
             loadState = LoadState.Loaded;
         }
 
-        internal virtual void Unload()
-        {
+        internal virtual void Unload() {
             if (asset == null)
                 return;
 
@@ -150,20 +143,16 @@ namespace libx
             loadState = LoadState.Unload;
         }
 
-        internal virtual bool Update()
-        {
+        internal virtual bool Update() {
             if (checkRequires)
                 UpdateRequires();
             if (!isDone)
                 return true;
             if (completed == null)
                 return false;
-            try
-            {
+            try {
                 completed.Invoke(this);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Debug.LogException(ex);
             }
 
@@ -171,29 +160,26 @@ namespace libx
             return false;
         }
 
-        internal virtual void LoadImmediate()
-        {
+        internal virtual void LoadImmediate() {
         }
 
         #region IEnumerator implementation
 
-        public bool MoveNext()
-        {
+        public bool MoveNext() {
             return !isDone;
         }
 
-        public void Reset()
-        {
+        public void Reset() {
         }
 
-        public object Current
-        {
+        public object Current {
             get { return null; }
         }
 
         #endregion
     }
 
+    //  Manifest 专用 Request
     public class ManifestRequest : AssetRequest
     {
         private string assetName;
@@ -215,17 +201,13 @@ namespace libx
             }
         }
 
-        internal override void Load()
-        {
+        internal override void Load() {
             assetName = Path.GetFileName(name);
-            if (Assets.runtimeMode)
-            {
+            if (Assets.runtimeMode) {
                 var assetBundleName = assetName.Replace(".asset", ".unity3d").ToLower();
                 request = Assets.LoadBundleAsync(assetBundleName);
                 loadState = LoadState.LoadAssetBundle;
-            }
-            else
-            {
+            } else {
                 loadState = LoadState.Loaded;
             }
         }

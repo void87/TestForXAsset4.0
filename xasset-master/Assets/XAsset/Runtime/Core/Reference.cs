@@ -26,64 +26,67 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace libx
-{  
-	public class Reference
-	{
-		private List<Object> _requires;
+namespace libx {
+    // 引用抽象
+    public class Reference {
+        // 引用的 Object
+        private List<Object> _requires;
 
-		public bool IsUnused ()
-		{
-			if (_requires != null)
-			{
-				for (var i = 0; i < _requires.Count; i++)
-				{
-					var item = _requires[i];
-					if (item != null)
-						continue;
-					Release();
-					_requires.RemoveAt(i);
-					i--;
-				}
-				if (_requires.Count == 0)
-					_requires = null;
-			}
-			return refCount <= 0;
-		}
+        public bool IsUnused() {
+            if (_requires != null) {
+                for (var i = 0; i < _requires.Count; i++) {
+                    var item = _requires[i];
+                    if (item != null) {
+                        continue;
+                    }
+                    Release();
+                    _requires.RemoveAt(i);
+                    // 索引不会变, 因为 RemoveAt
+                    i--;
+                }
 
-		public int refCount;
+                // 
+                if (_requires.Count == 0)
+                    _requires = null;
+            }
 
-		public virtual void Retain ()
-		{
-			refCount++;
-		}
+            return refCount <= 0;
+        }
 
-		public virtual void Release ()
-		{
-			refCount--;
-		} 
-		
-		private bool checkRequires
-		{
-			get { return _requires != null; }
-		}
+        // 引用对象的数量
+        public int refCount;
 
-		public void Require(Object obj)
-		{
-			if (_requires == null)
-				_requires = new List<Object>();
+        // 引用加1
+        public virtual void Retain() {
+            refCount++;
+        }
 
-			_requires.Add(obj);
-			Retain();
-		}
+        // 应用减1
+        public virtual void Release() {
+            refCount--;
+        }
 
-		public void Dequire(Object obj)
-		{
-			if (_requires == null)
-				return;
+        // 检查是否有引用
+        private bool checkRequires {
+            get { return _requires != null; }
+        }
 
-			if (_requires.Remove(obj))
-				Release();
-		} 
-	} 
+        // 添加引用
+        public void Require(Object obj) {
+            if (_requires == null)
+                _requires = new List<Object>();
+
+            _requires.Add(obj);
+            Retain();
+        }
+
+        // 移除引用
+        public void Dequire(Object obj) {
+            if (_requires == null)
+                return;
+
+            if (_requires.Remove(obj))
+                Release();
+        }
+    }
 }

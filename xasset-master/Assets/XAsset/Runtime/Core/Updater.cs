@@ -587,6 +587,7 @@ namespace libx {
             OnMessage("正在初始化");
             var init = Assets.Initialize();
             yield return init;
+
             if (string.IsNullOrEmpty(init.error)) {
                 Assets.AddSearchPath("Assets/XAsset/Demo/Scenes");
                 init.Release();

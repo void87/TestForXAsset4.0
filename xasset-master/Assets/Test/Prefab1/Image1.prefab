@@ -65,7 +65,7 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-  m_Sprite: {fileID: 21300000, guid: 9ade20f45137032408a6174aa8136db1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: c1ce6823b80b81b48b803948baa72018, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
