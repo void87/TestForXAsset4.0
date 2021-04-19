@@ -189,20 +189,28 @@ namespace libx {
             };
         }
 
+        // UpdateScreen 中的 清理按钮 调用这个方法
         public void OnClear() {
             OnMessage("数据清除完毕");
             OnProgress(0);
+            // 清理 List<VFile>
             _versions.Clear();
+            // Downloader 清理
             _downloader.Clear();
+            // Step 重置到 Step.Wait
             _step = Step.Wait;
+            // 
             _reachabilityChanged = false;
 
+            // Assets 清理
             Assets.Clear();
 
+            // UpdateScreen.OnClear
             if (listener != null) {
                 listener.OnClear();
             }
 
+            // 删除 P 目录下的  保存路径
             if (Directory.Exists(_savePath)) {
                 Directory.Delete(_savePath, true);
             }
