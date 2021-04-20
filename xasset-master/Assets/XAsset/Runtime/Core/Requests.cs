@@ -100,6 +100,7 @@ namespace libx
 
         public byte[] bytes { get; protected set; }
 
+        // 加载后的 asset
         // BundleRequest&BundleRequestAsync typeof(asset) = AssetBundle
         public Object asset { get; internal set; }
 
@@ -144,12 +145,16 @@ namespace libx
         }
 
         internal virtual bool Update() {
-            if (checkRequires)
+            if (checkRequires) {
                 UpdateRequires();
-            if (!isDone)
+            }
+            if (!isDone) {
                 return true;
-            if (completed == null)
+            }
+            if (completed == null) {
                 return false;
+            }
+
             try {
                 completed.Invoke(this);
             } catch (Exception ex) {
@@ -180,17 +185,14 @@ namespace libx
     }
 
     //  Manifest 专用 Request
-    public class ManifestRequest : AssetRequest
-    {
+    public class ManifestRequest : AssetRequest {
         private string assetName;
         private BundleRequest request;
 
         public int version { get; private set; }
 
-        public override float progress
-        {
-            get
-            {
+        public override float progress {
+            get {
                 if (isDone) return 1;
 
                 if (loadState == LoadState.Init) return 0;
@@ -203,6 +205,7 @@ namespace libx
 
         internal override void Load() {
             assetName = Path.GetFileName(name);
+            // 
             if (Assets.runtimeMode) {
                 var assetBundleName = assetName.Replace(".asset", ".unity3d").ToLower();
                 request = Assets.LoadBundleAsync(assetBundleName);
@@ -212,27 +215,25 @@ namespace libx
             }
         }
 
-        internal override bool Update()
-        {
-            if (!base.Update()) return false;
+        internal override bool Update() {
+            if (!base.Update()) {
+                return false;
+            }
 
-            if (loadState == LoadState.Init) return true;
+            if (loadState == LoadState.Init) {
+                return true;
+            }
 
-            if (request == null)
-            {
+            if (request == null) {
                 loadState = LoadState.Loaded;
                 error = "request == null";
                 return false;
             }
 
-            if (request.isDone)
-            {
-                if (request.assetBundle == null)
-                {
+            if (request.isDone) {
+                if (request.assetBundle == null) {
                     error = "assetBundle == null";
-                }
-                else
-                {
+                } else {
                     var manifest = request.assetBundle.LoadAsset<Manifest>(assetName);
                     if (manifest == null)
                         error = "manifest == null";
@@ -247,10 +248,8 @@ namespace libx
             return true;
         }
 
-        internal override void Unload()
-        {
-            if (request != null)
-            {
+        internal override void Unload() {
+            if (request != null) {
                 request.Release();
                 request = null;
             }
@@ -259,22 +258,24 @@ namespace libx
         }
     }
 
-    public class BundleAssetRequest : AssetRequest
-    {
+    public class BundleAssetRequest : AssetRequest {
         protected readonly string assetBundleName;
         protected BundleRequest BundleRequest;
+        // 依赖的 Bundle
         protected List<BundleRequest> children = new List<BundleRequest>();
 
-        public BundleAssetRequest(string bundle)
-        {
+        public BundleAssetRequest(string bundle) {
             assetBundleName = bundle;
         }
 
-        internal override void Load()
-        {
+        internal override void Load() {
             BundleRequest = Assets.LoadBundle(assetBundleName);
+            // 获取 bundle 的依赖
             var names = Assets.GetAllDependencies(assetBundleName);
-            foreach (var item in names) children.Add(Assets.LoadBundle(item));
+
+            foreach (var item in names) {
+                children.Add(Assets.LoadBundle(item));
+            }
             var assetName = Path.GetFileName(name);
             var ab = BundleRequest.assetBundle;
             if (ab != null) asset = ab.LoadAsset(assetName, assetType);
@@ -282,16 +283,13 @@ namespace libx
             loadState = LoadState.Loaded;
         }
 
-        internal override void Unload()
-        {
-            if (BundleRequest != null)
-            {
+        internal override void Unload() {
+            if (BundleRequest != null) {
                 BundleRequest.Release();
                 BundleRequest = null;
             }
 
-            if (children.Count > 0)
-            {
+            if (children.Count > 0) {
                 foreach (var item in children) item.Release();
                 children.Clear();
             }
@@ -710,27 +708,25 @@ namespace libx
         }
     }
 
-    public class BundleRequest : AssetRequest
-    {
+    // 处理 ab 包的 request
+    public class BundleRequest : AssetRequest {
         // bundle 名称 e.g. assets/xasset/demo/ui/1loadingpage.unity3d
         public string assetBundleName { get; set; }
 
-        public AssetBundle assetBundle
-        {
+        public AssetBundle assetBundle {
             get { return asset as AssetBundle; }
             internal set { asset = value; }
         }
 
-        internal override void Load()
-        {
+        // 真正加载的地方, 调用 API 从 ab 包 加载
+        internal override void Load() {
             asset = AssetBundle.LoadFromFile(name);
             if (assetBundle == null)
                 error = name + " LoadFromFile failed.";
             loadState = LoadState.Loaded;
         }
 
-        internal override void Unload()
-        {
+        internal override void Unload() {
             if (assetBundle == null)
                 return;
             assetBundle.Unload(true);
@@ -801,16 +797,15 @@ namespace libx
         }
     }
 
-    public class WebBundleRequest : BundleRequest
-    {
+    // WebBundleRequest
+    public class WebBundleRequest : BundleRequest {
         private UnityWebRequest _request;
+        // false 没有地方修改这个变量
         public bool cache;
         public Hash128 hash;
 
-        public override float progress
-        {
-            get
-            {
+        public override float progress {
+            get {
                 if (isDone) return 1;
                 if (loadState == LoadState.Init) return 0;
 
@@ -820,8 +815,7 @@ namespace libx
             }
         }
 
-        internal override void Load()
-        {
+        internal override void Load() {
             _request = cache
                 ? UnityWebRequestAssetBundle.GetAssetBundle(name, hash)
                 : UnityWebRequestAssetBundle.GetAssetBundle(name);
@@ -829,10 +823,8 @@ namespace libx
             loadState = LoadState.LoadAssetBundle;
         }
 
-        internal override void Unload()
-        {
-            if (_request != null)
-            {
+        internal override void Unload() {
+            if (_request != null) {
                 _request.Dispose();
                 _request = null;
             }

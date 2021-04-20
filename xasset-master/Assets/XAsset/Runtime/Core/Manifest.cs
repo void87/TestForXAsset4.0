@@ -56,6 +56,7 @@ namespace libx {
     }
 
     public class Manifest : ScriptableObject {
+        
         public string[] activeVariants = new string[0];
         // д©б╪ап╠М
         // e.g.

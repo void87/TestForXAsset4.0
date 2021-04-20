@@ -53,15 +53,15 @@ namespace libx {
             return refCount <= 0;
         }
 
-        // 引用对象的数量
+        // 被引用的数量
         public int refCount;
 
-        // 引用加1
+        // 被引用加1
         public virtual void Retain() {
             refCount++;
         }
 
-        // 应用减1
+        // 引用减1
         public virtual void Release() {
             refCount--;
         }
