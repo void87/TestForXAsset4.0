@@ -61,7 +61,7 @@ namespace libx {
             refCount++;
         }
 
-        // 引用减1
+        // 被引用减1
         public virtual void Release() {
             refCount--;
         }

@@ -48,18 +48,27 @@ namespace libx
         Unload
     }
 
-    // Asset 请求
+    // 所有 Request 的基类
     public class AssetRequest : Reference, IEnumerator {
 
+        // 初始加载状态
         private LoadState _loadState = LoadState.Init;
+        // 依赖哪些 UnityEngine.Object
         private List<Object> _requires;
+        // asset 类型
         public Type assetType;
 
         // 请求完毕后的 回调
         public Action<AssetRequest> completed;
-        // BundleRequest&BundleRequestAsync    e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/ui/1loadingpage.unity3d
-        // AssetRequest&AssetRequestAsync   e.g. Assets/XAsset/Demo/UI/1LoadingPage/Title2_bg.png
-        // SceneRequest&SceneRequestAsync   e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/scenes.unity3d
+
+        // 资源名字， 根据子类 可以是 asset 名， 也可以是 bundle 名
+        // 
+        // BundleRequest & BundleRequestAsync    
+        //     e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/ui/1loadingpage.unity3d
+        // AssetRequest & AssetRequestAsync   
+        //      e.g. Assets/XAsset/Demo/UI/1LoadingPage/Title2_bg.png
+        // SceneRequest & SceneRequestAsync   
+        //      e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/scenes.unity3d
         public string name;
 
         public AssetRequest() {
@@ -67,16 +76,19 @@ namespace libx
             loadState = LoadState.Init;
         }
 
+        // Asset || Bundle 的加载状态
         public LoadState loadState {
             get { return _loadState; }
             protected set {
                 _loadState = value;
+                // 设置 加载完时， 自动调用 Complete 回调
                 if (value == LoadState.Loaded) {
                     Complete();
                 }
             }
         }
 
+        // 完成时 回调
         private void Complete() {
             if (completed != null) {
                 completed(this);
@@ -84,15 +96,18 @@ namespace libx
             }
         }
 
+        // isDone 状态由 LoadState 判断
         public virtual bool isDone {
             get {
                 return loadState == LoadState.Loaded || loadState == LoadState.Unload;
             }
         }
 
+        // AssetRequest  加载进度 默认 1
         public virtual float progress {
             get { return 1; }
         }
+
 
         public virtual string error { get; protected set; }
 
@@ -100,20 +115,24 @@ namespace libx
 
         public byte[] bytes { get; protected set; }
 
-        // 加载后的 asset
-        // BundleRequest&BundleRequestAsync typeof(asset) = AssetBundle
+        // 这个 AssetRequest 包含的 asset (UnityEngine.Object)
         public Object asset { get; internal set; }
 
+        // 检查依赖是否为空
         private bool checkRequires {
             get { return _requires != null; }
         }
 
+        // 更新 AssetRequest._requires
         private void UpdateRequires() {
             for (var i = 0; i < _requires.Count; i++) {
                 var item = _requires[i];
+                
                 if (item != null)
                     continue;
+                // 被引用-1
                 Release();
+
                 _requires.RemoveAt(i);
                 i--;
             }
@@ -123,6 +142,7 @@ namespace libx
         }
 
         internal virtual void Load() {
+            // 
             if (!Assets.runtimeMode && Assets.loadDelegate != null) {
                 asset = Assets.loadDelegate(name, assetType);
             }
@@ -144,13 +164,18 @@ namespace libx
             loadState = LoadState.Unload;
         }
 
+        // true 表示正在更新
+        // false 表示不在更新
         internal virtual bool Update() {
             if (checkRequires) {
+                // 更新 AssetRequest._requires
                 UpdateRequires();
             }
+
             if (!isDone) {
                 return true;
             }
+
             if (completed == null) {
                 return false;
             }
@@ -186,7 +211,9 @@ namespace libx
 
     //  Manifest 专用 Request
     public class ManifestRequest : AssetRequest {
+        // 包含的 asset名
         private string assetName;
+        // 包含的 BundleRequest
         private BundleRequest request;
 
         public int version { get; private set; }
@@ -204,10 +231,13 @@ namespace libx
         }
 
         internal override void Load() {
+            // 只获取 Assets/Manifest 的 文件名 Manifest.asset
             assetName = Path.GetFileName(name);
-            // 
             if (Assets.runtimeMode) {
+                // 特殊处理,因为 Manifest 比较特殊
+                // Manifest.asset 转为 manifest.unity3d
                 var assetBundleName = assetName.Replace(".asset", ".unity3d").ToLower();
+                // 加载 assetbundle: manifest.unity3d
                 request = Assets.LoadBundleAsync(assetBundleName);
                 loadState = LoadState.LoadAssetBundle;
             } else {
@@ -254,12 +284,16 @@ namespace libx
                 request = null;
             }
 
+            // 设置 LoadState 为 Unload
             loadState = LoadState.Unload;
         }
     }
 
+    // 
     public class BundleAssetRequest : AssetRequest {
+        // bundle 名 e.g. assets/test/prefab1.unity3d
         protected readonly string assetBundleName;
+        // 包含的  BundleRequest
         protected BundleRequest BundleRequest;
         // 依赖的 Bundle
         protected List<BundleRequest> children = new List<BundleRequest>();
@@ -268,7 +302,9 @@ namespace libx
             assetBundleName = bundle;
         }
 
+        // 加载 AssetBudnle
         internal override void Load() {
+            
             BundleRequest = Assets.LoadBundle(assetBundleName);
             // 获取 bundle 的依赖
             var names = Assets.GetAllDependencies(assetBundleName);
@@ -459,6 +495,7 @@ namespace libx
             loadState = LoadState.Loaded;
         }
 
+        // SceneAssetRequest 卸载
         internal override void Unload()
         {
             if (BundleRequest != null)
@@ -723,6 +760,7 @@ namespace libx
             asset = AssetBundle.LoadFromFile(name);
             if (assetBundle == null)
                 error = name + " LoadFromFile failed.";
+            // AssetBundle 加载玩后 设置 Loaded
             loadState = LoadState.Loaded;
         }
 
@@ -750,29 +788,29 @@ namespace libx
             }
         }
 
-        internal override bool Update()
-        {
-            if (!base.Update()) return false;
+        internal override bool Update() {
+            if (!base.Update()) {
+                return false;
+            }
 
-            if (loadState == LoadState.LoadAsset)
-                if (_request.isDone)
-                {
+            if (loadState == LoadState.LoadAsset) {
+                if (_request.isDone) {
                     assetBundle = _request.assetBundle;
-                    if (assetBundle == null) error = string.Format("unable to load assetBundle:{0}", name);
+                    if (assetBundle == null) {
+                        error = string.Format("unable to load assetBundle:{0}", name);
+                    }
+                    // 设置为
                     loadState = LoadState.Loaded;
                     return false;
                 }
-
+            }
             return true;
         }
 
-        internal override void Load()
-        {
-            if (_request == null)
-            {
+        internal override void Load() {
+            if (_request == null) {
                 _request = AssetBundle.LoadFromFileAsync(name);
-                if (_request == null)
-                {
+                if (_request == null) {
                     error = name + " LoadFromFile failed.";
                     return;
                 }
@@ -792,7 +830,9 @@ namespace libx
         {
             Load();
             assetBundle = _request.assetBundle;
-            if (assetBundle != null) Debug.LogWarning("LoadImmediate:" + assetBundle.name);
+            if (assetBundle != null) {
+                Debug.LogWarning("LoadImmediate:" + assetBundle.name);
+            }
             loadState = LoadState.Loaded;
         }
     }

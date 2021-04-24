@@ -585,22 +585,29 @@ namespace libx {
         // 记载游戏场景
         private IEnumerator LoadGameScene() {
             OnMessage("正在初始化");
-            var init = Assets.Initialize();
-            yield return init;
+            var manifest = Assets.Initialize();
+            yield return manifest;
 
-            if (string.IsNullOrEmpty(init.error)) {
+
+
+            if (string.IsNullOrEmpty(manifest.error)) {
                 Assets.AddSearchPath("Assets/XAsset/Demo/Scenes");
-                init.Release();
+                manifest.Release();
+
                 OnProgress(0);
                 OnMessage("加载游戏场景");
                 var scene = Assets.LoadSceneAsync(gameScene, false);
+
+                // 等待场景加载完成
                 while (!scene.isDone) {
                     OnProgress(scene.progress);
                     yield return null;
                 }
+
+
             } else {
-                init.Release();
-                var mb = MessageBox.Show("提示", "初始化异常错误：" + init.error + "请联系技术支持");
+                manifest.Release();
+                var mb = MessageBox.Show("提示", "初始化异常错误：" + manifest.error + "请联系技术支持");
                 yield return mb;
                 Quit();
             }

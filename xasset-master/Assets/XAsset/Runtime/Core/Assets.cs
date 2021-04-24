@@ -68,6 +68,7 @@ namespace libx {
         // P 目录
         public static string updatePath { get; set; }
 
+        // 添加 场景的 搜索目录
         public static void AddSearchPath(string path) {
             _searchPaths.Add(path);
         }
@@ -97,7 +98,9 @@ namespace libx {
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
                 runtimeMode, basePath, updatePath));
 
-            var request = new ManifestRequest { name = ManifestAsset };
+            var request = new ManifestRequest {
+                name = ManifestAsset
+            };
             AddAssetRequest(request);
             return request;
         }
@@ -128,7 +131,7 @@ namespace libx {
             }
             asset.Load();
             asset.Retain();
-            _scenes.Add(asset);
+            _sceneAssetRequestList.Add(asset);
             Log(string.Format("LoadScene:{0}", path));
             return asset;
         }
@@ -141,6 +144,7 @@ namespace libx {
             return LoadAsset(path, type, true);
         }
 
+        // 加载 asset
         public static AssetRequest LoadAsset(string path, Type type) {
             return LoadAsset(path, type, false);
         }
@@ -175,75 +179,94 @@ namespace libx {
         }
 
         // 所有的 AssetRequest
-        private static Dictionary<string, AssetRequest> _assets = new Dictionary<string, AssetRequest>();
+        private static Dictionary<string, AssetRequest> _allAssetRequestDict = new Dictionary<string, AssetRequest>();
 
         // 正在加载的 AssetRequest
-        private static List<AssetRequest> _loadingAssets = new List<AssetRequest>();
+        private static List<AssetRequest> _loadingAssetRequestList = new List<AssetRequest>();
+        // 专门的 SceneRequest
+        private static List<SceneAssetRequest> _sceneAssetRequestList = new List<SceneAssetRequest>();
 
-        private static List<SceneAssetRequest> _scenes = new List<SceneAssetRequest>();
+        private static List<AssetRequest> _unusedAssetRequestList = new List<AssetRequest>();
 
-        private static List<AssetRequest> _unusedAssets = new List<AssetRequest>();
-
+        // Update 驱动 正在加载的 AssetRequest
         private void Update() {
             UpdateAssets();
             UpdateBundles();
         }
 
+        // 
         private static void UpdateAssets() {
-            for (var i = 0; i < _loadingAssets.Count; ++i) {
-                var request = _loadingAssets[i];
+            for (var i = 0; i < _loadingAssetRequestList.Count; ++i) {
+                var request = _loadingAssetRequestList[i];
+                // 跳过正在更新的 AssetRequest
                 if (request.Update())
                     continue;
-                _loadingAssets.RemoveAt(i);
+                // 移除不在更新中的 AssetRequest
+                _loadingAssetRequestList.RemoveAt(i);
                 --i;
             }
 
-            foreach (var item in _assets) {
+            // 查找 不需要的 AssetRequest
+            foreach (var item in _allAssetRequestDict) {
+                // 将 isDone && IsUnused 的 AssetRequest 添加到 _unusedAssetRequest
                 if (item.Value.isDone && item.Value.IsUnused()) {
-                    _unusedAssets.Add(item.Value);
+                    _unusedAssetRequestList.Add(item.Value);
                 }
             }
 
-            if (_unusedAssets.Count > 0) {
-                for (var i = 0; i < _unusedAssets.Count; ++i) {
-                    var request = _unusedAssets[i];
+            // 清理不需要的 AssetRequest
+            if (_unusedAssetRequestList.Count > 0) {
+                for (var i = 0; i < _unusedAssetRequestList.Count; ++i) {
+                    var request = _unusedAssetRequestList[i];
                     Log(string.Format("UnloadAsset:{0}", request.name));
-                    _assets.Remove(request.name);
+                    // 从 _allAssetRequest 中 移除这个 AssetRequest
+                    _allAssetRequestDict.Remove(request.name);
+                    //  卸载 这个 AssetRequest
                     request.Unload();
                 }
-                _unusedAssets.Clear();
+                // 每帧清空 当前帧收集的 没用的 AssetRequest
+                _unusedAssetRequestList.Clear();
             }
 
-            for (var i = 0; i < _scenes.Count; ++i) {
-                var request = _scenes[i];
+            // 处理 SceneAssetRequest
+            for (var i = 0; i < _sceneAssetRequestList.Count; ++i) {
+                var request = _sceneAssetRequestList[i];
+                // 跳过 正在更新的 SceneAssetRequest || 没有使用的 SceneAssetRequest
                 if (request.Update() || !request.IsUnused())
                     continue;
-                _scenes.RemoveAt(i);
+                // 从 集合中移除
+                _sceneAssetRequestList.RemoveAt(i);
                 Log(string.Format("UnloadScene:{0}", request.name));
+                // SceneAssetRequest 卸载
                 request.Unload();
                 --i;
             }
         }
 
-        // 添加到 _assets, _loadingAssets
+        // 添加到 _assetRequestDict, _loadingAssetRequestList
+        // 然后 Load
         private static void AddAssetRequest(AssetRequest request) {
-            _assets.Add(request.name, request);
-            _loadingAssets.Add(request);
+            _allAssetRequestDict.Add(request.name, request);
+
+            _loadingAssetRequestList.Add(request);
+
             request.Load();
         }
 
+        // 加载 Asset
         private static AssetRequest LoadAsset(string path, Type type, bool async) {
             if (string.IsNullOrEmpty(path)) {
                 Debug.LogError("invalid path");
                 return null;
             }
 
+            // 判断这个路径是否存在记录,有就返回
             path = GetExistPath(path);
 
             AssetRequest request;
-            if (_assets.TryGetValue(path, out request)) {
+            if (_allAssetRequestDict.TryGetValue(path, out request)) {
                 request.Retain();
-                _loadingAssets.Add(request);
+                _loadingAssetRequestList.Add(request);
                 return request;
             }
 
@@ -277,6 +300,8 @@ namespace libx {
 
         private static List<string> _searchPaths = new List<string>();
 
+
+        // 从现有记录里查找 是否有记录 这个 asset名, 如果有返回 asset名，再加上特殊处理(如果有的话)
         private static string GetExistPath(string path) {
 #if UNITY_EDITOR
             if (!runtimeMode) {
@@ -293,11 +318,15 @@ namespace libx {
                 return path;
             }
 #endif
+            // 先查找所有的 asset bundle 映射表
             if (_assetToBundleDict.ContainsKey(path))
                 return path;
 
+            // 特殊搜索路径
             foreach (var item in _searchPaths) {
+                // 通过特殊路径组合
                 var existPath = string.Format("{0}/{1}", item, path);
+                // 查找所有的 asset bundle 映射表
                 if (_assetToBundleDict.ContainsKey(existPath))
                     return existPath;
             }
@@ -344,7 +373,7 @@ namespace libx {
             return new string[0];
         }
 
-        // 加载 bundle
+        // 通过bundle名 加载 bundle
         internal static BundleRequest LoadBundle(string assetBundleName) {
             return LoadBundle(assetBundleName, false);
         }
@@ -358,7 +387,7 @@ namespace libx {
             bundle.Release();
         }
 
-        // 通过 ab 包名 读取 ab包
+        // 通过 ab 包名 读取 ab包, 同步/异步
         internal static BundleRequest LoadBundle(string assetBundleName, bool asyncMode) {
             if (string.IsNullOrEmpty(assetBundleName)) {
                 Debug.LogError("assetBundleName == null");
@@ -367,15 +396,16 @@ namespace libx {
 
             assetBundleName = RemapVariantName(assetBundleName);
 
-            // 目录 +  ab名
+            // 路径 +  ab名
             var url = GetDataPath(assetBundleName) + assetBundleName;
 
             BundleRequest bundleRequest;
 
-            // 已经加载了这个 bundle
+            // 已经有这个 BundleRequest
             if (_bundleRequestDict.TryGetValue(url, out bundleRequest)) {
                 // bundle 被引用+1
                 bundleRequest.Retain();
+                // 加入 loadingBundleRequest
                 _loadingBundleRequestList.Add(bundleRequest);
                 return bundleRequest;
             }
@@ -386,9 +416,11 @@ namespace libx {
                 url.StartsWith("file://", StringComparison.Ordinal) ||
                 url.StartsWith("ftp://", StringComparison.Ordinal)) {
 
+                // WebBundleRequest
                 bundleRequest = new WebBundleRequest();
             // 从非网络请求   BundleRequestAsync: BundleRequest
             } else {
+                // BundleRequestAsync(): BundleRequest()
                 bundleRequest = asyncMode ? new BundleRequestAsync() : new BundleRequest();
             }
 
@@ -401,23 +433,29 @@ namespace libx {
             } else {
                 // 真正加载ab的地方
                 bundleRequest.Load();
+                // 加入 _loadingBundleRequestList
                 _loadingBundleRequestList.Add(bundleRequest);
                 Log("LoadBundle: " + url);
             }
 
+            // BundleRequest 的被引用 +1
             bundleRequest.Retain();
 
+            // 返回 BundleRequest
             return bundleRequest;
         }
 
-        // 获取 bunlde 的路径, 返回 P 目录路径 || S 目录路径
+        // 获取 bunlde 的路径
         private static string GetDataPath(string bundleName) {
+            // P 目录为空, 返回 S 目录
             if (string.IsNullOrEmpty(updatePath))
                 return basePath;
 
+            // P 目录存在这个  bundle, 返回 P目录
             if (File.Exists(updatePath + bundleName))
                 return updatePath;
 
+            // 返回 P 目录
             return basePath;
         }
 
