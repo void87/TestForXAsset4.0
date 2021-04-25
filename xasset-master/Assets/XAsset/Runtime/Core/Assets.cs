@@ -34,6 +34,7 @@ using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace libx {
+    
     public sealed class Assets : MonoBehaviour {
         // 自定义 Manifest
         public static readonly string ManifestAsset = "Assets/Manifest.asset";
@@ -194,7 +195,8 @@ namespace libx {
             UpdateBundles();
         }
 
-        // 
+        // 更新 _loadingAssetRequestList, _unusedAssetRequestList
+        // _sceneAssetRequestList
         private static void UpdateAssets() {
             for (var i = 0; i < _loadingAssetRequestList.Count; ++i) {
                 var request = _loadingAssetRequestList[i];
@@ -298,6 +300,7 @@ namespace libx {
 
         #region Paths
 
+        // 附加的搜索路径
         private static List<string> _searchPaths = new List<string>();
 
 
@@ -326,6 +329,7 @@ namespace libx {
             foreach (var item in _searchPaths) {
                 // 通过特殊路径组合
                 var existPath = string.Format("{0}/{1}", item, path);
+
                 // 查找所有的 asset bundle 映射表
                 if (_assetToBundleDict.ContainsKey(existPath))
                     return existPath;
@@ -347,6 +351,7 @@ namespace libx {
         // 正在加载的 BundleRequest
         private static List<BundleRequest> _loadingBundleRequestList = new List<BundleRequest>();
 
+        // 需要移除的 BundleRequest
         private static List<BundleRequest> _unusedBundleRequestList = new List<BundleRequest>();
 
         private static List<BundleRequest> _toloadBundleList = new List<BundleRequest>();
@@ -460,8 +465,9 @@ namespace libx {
         }
 
         private static void UpdateBundles() {
+
             var max = MAX_BUNDLES_PERFRAME;
-            if (_toloadBundleList.Count > 0 && max > 0 && _loadingBundleRequestList.Count < max)
+            if (_toloadBundleList.Count > 0 && max > 0 && _loadingBundleRequestList.Count < max) {
                 for (var i = 0; i < Math.Min(max - _loadingBundleRequestList.Count, _toloadBundleList.Count); ++i) {
                     var item = _toloadBundleList[i];
                     if (item.loadState == LoadState.Init) {
@@ -471,14 +477,19 @@ namespace libx {
                         --i;
                     }
                 }
+            }
 
+            // 处理 _loadingBundleRequestList
             for (var i = 0; i < _loadingBundleRequestList.Count; i++) {
                 var item = _loadingBundleRequestList[i];
+                // 跳过正在更新中的 BundleRequest
                 if (item.Update())
                     continue;
+                // 移除不在更新的 BundleRequest
                 _loadingBundleRequestList.RemoveAt(i);
                 --i;
             }
+
 
             foreach (var item in _bundleRequestDict) {
                 if (item.Value.isDone && item.Value.IsUnused()) {
@@ -508,6 +519,7 @@ namespace libx {
 
             var bestFit = int.MaxValue;
             var bestFitIndex = -1;
+
             // Loop all the assetBundles with variant to find the best fit variant assetBundle.
             for (var i = 0; i < bundlesWithVariant.Count; i++) {
                 var curSplit = bundlesWithVariant[i].Split('.');

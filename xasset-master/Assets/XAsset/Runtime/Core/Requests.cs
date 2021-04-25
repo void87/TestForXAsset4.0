@@ -68,7 +68,7 @@ namespace libx
         // AssetRequest & AssetRequestAsync   
         //      e.g. Assets/XAsset/Demo/UI/1LoadingPage/Title2_bg.png
         // SceneRequest & SceneRequestAsync   
-        //      e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/scenes.unity3d
+        
         public string name;
 
         public AssetRequest() {

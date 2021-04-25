@@ -29,10 +29,12 @@ using UnityEngine;
 namespace libx {
     // 引用抽象
     public class Reference {
-        // 引用的 Object
+        // 引用的 Object, 没有用到(private)
         private List<Object> _requires;
-
+        
         public bool IsUnused() {
+
+            // 下面的逻辑没有用到
             if (_requires != null) {
                 for (var i = 0; i < _requires.Count; i++) {
                     var item = _requires[i];
@@ -45,11 +47,11 @@ namespace libx {
                     i--;
                 }
 
-                // 
                 if (_requires.Count == 0)
                     _requires = null;
             }
 
+            // 这个方法只用到 下面这个判断
             return refCount <= 0;
         }
 
@@ -66,12 +68,14 @@ namespace libx {
             refCount--;
         }
 
-        // 检查是否有引用
+        // 没有用到
         private bool checkRequires {
-            get { return _requires != null; }
+            get {
+                return _requires != null;
+            }
         }
 
-        // 添加引用
+        // 没有用到
         public void Require(Object obj) {
             if (_requires == null)
                 _requires = new List<Object>();
@@ -80,7 +84,7 @@ namespace libx {
             Retain();
         }
 
-        // 移除引用
+        // 没有用到
         public void Dequire(Object obj) {
             if (_requires == null)
                 return;
