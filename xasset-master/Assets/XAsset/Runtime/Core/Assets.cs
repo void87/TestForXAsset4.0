@@ -347,7 +347,7 @@ namespace libx {
 
         private static readonly int MAX_BUNDLES_PERFRAME = 0;
 
-        // 已经请求过的 BundleRequest [bunlde路径名， BundleRequest]
+        // 已经请求过的 BundleRequest [bunlde全路径名， BundleRequest]
         private static Dictionary<string, BundleRequest> _bundleRequestDict = new Dictionary<string, BundleRequest>();
 
         // 正在加载的 BundleRequest
@@ -356,6 +356,7 @@ namespace libx {
         // 需要移除的 BundleRequest
         private static List<BundleRequest> _unusedBundleRequestList = new List<BundleRequest>();
 
+        // 将要加载的 BundleRequest(不是当前帧)
         private static List<BundleRequest> _toloadBundleList = new List<BundleRequest>();
 
         private static List<string> _activeVariants = new List<string>();
