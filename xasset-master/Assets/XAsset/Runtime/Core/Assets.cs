@@ -99,7 +99,9 @@ namespace libx {
                 "Initialize with: runtimeMode={0}\nbasePath：{1}\nupdatePath={2}",
                 runtimeMode, basePath, updatePath));
 
+            // 首先处理 ManifestRequest
             var request = new ManifestRequest {
+                // Assets/Manifest.asset
                 name = ManifestAsset
             };
             AddAssetRequest(request);
@@ -145,7 +147,7 @@ namespace libx {
             return LoadAsset(path, type, true);
         }
 
-        // 加载 asset
+        // 加载 asset Assets.LoadAsset
         public static AssetRequest LoadAsset(string path, Type type) {
             return LoadAsset(path, type, false);
         }
@@ -179,7 +181,7 @@ namespace libx {
             }
         }
 
-        // 所有的 AssetRequest
+        // 当前正在使用的 AssetRequest, 不用会卸载掉
         private static Dictionary<string, AssetRequest> _allAssetRequestDict = new Dictionary<string, AssetRequest>();
 
         // 正在加载的 AssetRequest
@@ -255,7 +257,7 @@ namespace libx {
             request.Load();
         }
 
-        // 加载 Asset
+        // 加载 Asset [Assets].LoadAsset
         private static AssetRequest LoadAsset(string path, Type type, bool async) {
             if (string.IsNullOrEmpty(path)) {
                 Debug.LogError("invalid path");
@@ -345,7 +347,7 @@ namespace libx {
 
         private static readonly int MAX_BUNDLES_PERFRAME = 0;
 
-        // [bunlde路径名， BundleRequest]
+        // 已经请求过的 BundleRequest [bunlde路径名， BundleRequest]
         private static Dictionary<string, BundleRequest> _bundleRequestDict = new Dictionary<string, BundleRequest>();
 
         // 正在加载的 BundleRequest
@@ -378,12 +380,12 @@ namespace libx {
             return new string[0];
         }
 
-        // 通过bundle名 加载 bundle
+        // 通过bundle名 加载 bundle  Assets.LoadBundle
         internal static BundleRequest LoadBundle(string assetBundleName) {
             return LoadBundle(assetBundleName, false);
         }
 
-        // 通过 ab 包名字 读取ab包 async
+        // 通过 ab 包名字 读取ab包 async    Assets.LoadBundleAsync
         internal static BundleRequest LoadBundleAsync(string assetBundleName) {
             return LoadBundle(assetBundleName, true);
         }
@@ -392,7 +394,7 @@ namespace libx {
             bundle.Release();
         }
 
-        // 通过 ab 包名 读取 ab包, 同步/异步
+        // 通过 ab 包名 读取 ab包, 同步/异步   Assets.LoadBundle
         internal static BundleRequest LoadBundle(string assetBundleName, bool asyncMode) {
             if (string.IsNullOrEmpty(assetBundleName)) {
                 Debug.LogError("assetBundleName == null");
