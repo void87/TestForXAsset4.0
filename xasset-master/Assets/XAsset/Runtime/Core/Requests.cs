@@ -51,6 +51,12 @@ namespace libx
         LoadAsset,
         // 加载 bundle/asset 完毕
         // AssetRequest.Load()  // 不会调用这个
+        // ManifestRequest.Load()   // 不是 runtimeMode
+        // ManifestRequest.Update() // request 为空的处理
+        // BundleAssetRequest.Load()  
+        // BundleAssetRequestAsync.OnError()    错误处理
+        // BundleAssetRequestAsync.OnUpdate // request 为空的处理
+        // BundleAssetRequestAsync.LoadImmediate()  
         // 
         Loaded,
         // 已卸载
@@ -338,6 +344,7 @@ namespace libx
             var ab = BundleRequest.assetBundle;
             if (ab != null) asset = ab.LoadAsset(assetName, assetType);
             if (asset == null) error = "asset == null";
+
             loadState = LoadState.Loaded;
         }
 
