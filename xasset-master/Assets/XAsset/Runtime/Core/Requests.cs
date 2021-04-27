@@ -340,6 +340,7 @@ namespace libx
             foreach (var item in names) {
                 children.Add(Assets.LoadBundle(item));
             }
+
             var assetName = Path.GetFileName(name);
             var ab = BundleRequest.assetBundle;
             if (ab != null) asset = ab.LoadAsset(assetName, assetType);
@@ -649,6 +650,7 @@ namespace libx
         // bundle 名称 e.g. assets/xasset/demo/ui/1loadingpage.unity3d
         public string assetBundleName { get; set; }
 
+        // 包含的 AssetBundle
         public AssetBundle assetBundle {
             get { return asset as AssetBundle; }
             internal set { asset = value; }
@@ -689,20 +691,26 @@ namespace libx
         // BundleRequestAsync 有 Update处理
         internal override bool Update() {
             if (!base.Update()) {
+                // 返回 false 表示不需要更新
                 return false;
             }
 
             if (loadState == LoadState.LoadAsset) {
+                // 也可以用 协程 查看 isDone
                 if (_assetBundleCreateRequest.isDone) {
+
                     assetBundle = _assetBundleCreateRequest.assetBundle;
                     if (assetBundle == null) {
                         error = string.Format("unable to load assetBundle:{0}", name);
                     }
-                    // 设置为
+
+                    // 根据 AssetBundleCreateRequest.isDone, 设置 LoadState.Loaded
                     loadState = LoadState.Loaded;
+                    // 返回 false 表示不需要更新
                     return false;
                 }
             }
+            // 返回 true 表示需要更新
             return true;
         }
 
