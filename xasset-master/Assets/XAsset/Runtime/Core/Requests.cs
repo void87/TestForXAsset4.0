@@ -265,7 +265,7 @@ namespace libx
                 var assetBundleName = assetName.Replace(".asset", ".unity3d").ToLower();
                 // 加载 assetbundle: manifest.unity3d
                 request = Assets.LoadBundleAsync(assetBundleName);
-                // 设置为 LoadState.LoadAssetBundle
+                // ManifestRequest 的 LoadState 设置为 LoadState.LoadAssetBundle
                 loadState = LoadState.LoadAssetBundle;
             } else {
                 // 设置
@@ -355,7 +355,9 @@ namespace libx
             }
 
             if (children.Count > 0) {
-                foreach (var item in children) item.Release();
+                foreach (var item in children) {
+                    item.Release();
+                }
                 children.Clear();
             }
 
@@ -648,7 +650,7 @@ namespace libx
     public class BundleRequest : AssetRequest {
         // bundle 名称 e.g. assets/xasset/demo/ui/1loadingpage.unity3d
         public string assetBundleName { get; set; }
-
+        // 包含的 AssetBundle
         public AssetBundle assetBundle {
             get { return asset as AssetBundle; }
             internal set { asset = value; }
@@ -693,12 +695,15 @@ namespace libx
             }
 
             if (loadState == LoadState.LoadAsset) {
+                // 检查 AssetBundleCreateRequest.isDone
                 if (_assetBundleCreateRequest.isDone) {
                     assetBundle = _assetBundleCreateRequest.assetBundle;
+
                     if (assetBundle == null) {
                         error = string.Format("unable to load assetBundle:{0}", name);
                     }
-                    // 设置为
+
+                    // AssetBundleCreateRequest.isDone 后 设置为 LoadState.Loaded
                     loadState = LoadState.Loaded;
                     return false;
                 }
@@ -716,7 +721,7 @@ namespace libx
                     return;
                 }
 
-                
+                // Async 请求 设置为 LoadState.LoadAsset, 供 Update 检查
                 loadState = LoadState.LoadAsset;
             }
         }
