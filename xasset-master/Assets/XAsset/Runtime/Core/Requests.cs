@@ -45,10 +45,13 @@ namespace libx
         // 
         //  WebBundleRequest.Load()
         LoadAssetBundle,
-        // 加载 asset 中
+        // 异步加载 AssetBundle 才会有这个状态
         // SceneAssetRequestAsync.LoadScene()
+        //      SceneManager.LoadSceneAsync()
         // BundleRequestAsync.Load()
+        //      AssetBundle.LoadFromFileAsync()
         // WebAssetRequest.Load()
+        //      UnityWebRequest.SendWebRequest()
         LoadAsset,
         // 加载 bundle/asset 完毕
         // AssetRequest.Load()  // 不会调用这个
@@ -195,6 +198,7 @@ namespace libx
 
         // true 表示正在更新
         // false 表示不在更新
+        // AssetRequest.Update()
         internal virtual bool Update() {
             if (checkRequires) {
                 // 更新 AssetRequest._requires
@@ -707,7 +711,7 @@ namespace libx
 
     // 请求 AssetBundle (异步)
     public class BundleRequestAsync : BundleRequest {
-        // 相关的 AssetBundleCreateRequest
+        // 包含的 AssetBundleCreateRequest
         private AssetBundleCreateRequest _assetBundleCreateRequest;
 
         public override float progress {
@@ -726,6 +730,7 @@ namespace libx
                 return false;
             }
 
+            
             if (loadState == LoadState.LoadAsset) {
                 // 也可以用 协程 查看 isDone
                 if (_assetBundleCreateRequest.isDone) {
@@ -745,6 +750,7 @@ namespace libx
             return true;
         }
 
+        // BundleRequestAsync.Load
         internal override void Load() {
             
             if (_assetBundleCreateRequest == null) {
