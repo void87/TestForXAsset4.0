@@ -184,16 +184,18 @@ namespace libx {
         }
 
         // 当前正在使用的 AssetRequest, 不用会卸载掉
-        // 只有 ManifestRequest 和 BundleAssetRequest
+        // 只有 ManifestRequest, BundleAssetRequest, BundleAssetRequestAsync
         private static Dictionary<string, AssetRequest> _allAssetRequestDict = new Dictionary<string, AssetRequest>();
 
         // 正在加载的 AssetRequest
-        // 只有 ManifestRequest 和 BundleAssetRequest
+        // 只有 ManifestRequest, BundleAssetRequest, BundleAssetRequestAsync
         private static List<AssetRequest> _loadingAssetRequestList = new List<AssetRequest>();
 
         // 专门的 SceneRequest
         private static List<SceneAssetRequest> _sceneAssetRequestList = new List<SceneAssetRequest>();
 
+        // 不用的 AssetRequest
+        // 只有 ManifestRequest, BundleAssetRequest, BundleAssetRequestAsync
         private static List<AssetRequest> _unusedAssetRequestList = new List<AssetRequest>();
 
         // Update 驱动 正在加载的 AssetRequest
@@ -443,7 +445,7 @@ namespace libx {
 
             // 查找 不需要的 AssetRequest
             foreach (var item in _allAssetRequestDict) {
-                // 将 isDone && IsUnused 的 AssetRequest 添加到 _unusedAssetRequest
+                // (LoadState.Loaded || LoadState.UnLoad) && Reference.IsUnused()
                 if (item.Value.isDone && item.Value.IsUnused()) {
                     _unusedAssetRequestList.Add(item.Value);
                 }
@@ -506,16 +508,22 @@ namespace libx {
             }
 
 
+            // 获取需要卸载的 BundleRequest
             foreach (var item in _bundleRequestDict) {
+                // (LoadState.Loaded || LoadState.UnLoad) && Reference.IsUnused()
                 if (item.Value.isDone && item.Value.IsUnused()) {
                     _unusedBundleRequestList.Add(item.Value);
                 }
             }
 
             if (_unusedBundleRequestList.Count <= 0) return;
+
+
+            // 将不用的 BundleRequest 卸载, 清空 _unusedBundleRequestList
             {
                 for (var i = 0; i < _unusedBundleRequestList.Count; i++) {
                     var item = _unusedBundleRequestList[i];
+                    // LoadState.Loaded || LoadState.UnLoad
                     if (item.isDone) {
                         item.Unload();
                         _bundleRequestDict.Remove(item.name);

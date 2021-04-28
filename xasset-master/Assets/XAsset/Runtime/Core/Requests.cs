@@ -666,11 +666,15 @@ namespace libx
             loadState = LoadState.Loaded;
         }
 
+        // BundleRequest.UnLoad
         internal override void Unload() {
             if (assetBundle == null)
                 return;
+            // AssetBundle.Unload (¹Ù·½API)
             assetBundle.Unload(true);
+
             assetBundle = null;
+
             loadState = LoadState.Unload;
         }
     }
