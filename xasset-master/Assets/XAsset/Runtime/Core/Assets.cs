@@ -105,6 +105,8 @@ namespace libx {
                 name = ManifestAsset
             };
             AddAssetRequest(request);
+
+
             return request;
         }
 
@@ -182,10 +184,13 @@ namespace libx {
         }
 
         // 当前正在使用的 AssetRequest, 不用会卸载掉
+        // 只有 ManifestRequest 和 BundleAssetRequest
         private static Dictionary<string, AssetRequest> _allAssetRequestDict = new Dictionary<string, AssetRequest>();
 
         // 正在加载的 AssetRequest
+        // 只有 ManifestRequest 和 BundleAssetRequest
         private static List<AssetRequest> _loadingAssetRequestList = new List<AssetRequest>();
+
         // 专门的 SceneRequest
         private static List<SceneAssetRequest> _sceneAssetRequestList = new List<SceneAssetRequest>();
 
@@ -197,58 +202,12 @@ namespace libx {
             UpdateBundles();
         }
 
-        // 更新 _loadingAssetRequestList, _unusedAssetRequestList
-        // _sceneAssetRequestList
-        private static void UpdateAssets() {
-            for (var i = 0; i < _loadingAssetRequestList.Count; ++i) {
-                var request = _loadingAssetRequestList[i];
-                // 跳过正在更新的 AssetRequest
-                if (request.Update())
-                    continue;
-                // 移除不在更新中的 AssetRequest
-                _loadingAssetRequestList.RemoveAt(i);
-                --i;
-            }
 
-            // 查找 不需要的 AssetRequest
-            foreach (var item in _allAssetRequestDict) {
-                // 将 isDone && IsUnused 的 AssetRequest 添加到 _unusedAssetRequest
-                if (item.Value.isDone && item.Value.IsUnused()) {
-                    _unusedAssetRequestList.Add(item.Value);
-                }
-            }
-
-            // 清理不需要的 AssetRequest
-            if (_unusedAssetRequestList.Count > 0) {
-                for (var i = 0; i < _unusedAssetRequestList.Count; ++i) {
-                    var request = _unusedAssetRequestList[i];
-                    Log(string.Format("UnloadAsset:{0}", request.name));
-                    // 从 _allAssetRequest 中 移除这个 AssetRequest
-                    _allAssetRequestDict.Remove(request.name);
-                    //  卸载 这个 AssetRequest
-                    request.Unload();
-                }
-                // 每帧清空 当前帧收集的 没用的 AssetRequest
-                _unusedAssetRequestList.Clear();
-            }
-
-            // 处理 SceneAssetRequest
-            for (var i = 0; i < _sceneAssetRequestList.Count; ++i) {
-                var request = _sceneAssetRequestList[i];
-                // 跳过 正在更新的 SceneAssetRequest || 没有使用的 SceneAssetRequest
-                if (request.Update() || !request.IsUnused())
-                    continue;
-                // 从 集合中移除
-                _sceneAssetRequestList.RemoveAt(i);
-                Log(string.Format("UnloadScene:{0}", request.name));
-                // SceneAssetRequest 卸载
-                request.Unload();
-                --i;
-            }
-        }
 
         // 添加到 _assetRequestDict, _loadingAssetRequestList
         // 然后 Load
+        // 
+        // 只会添加 ManifestRequest 和 BundleAssetRequest
         private static void AddAssetRequest(AssetRequest request) {
             _allAssetRequestDict.Add(request.name, request);
 
@@ -466,6 +425,59 @@ namespace libx {
             // 返回 P 目录
             return basePath;
         }
+
+        // 调用 _loadingAssetRequestList里的 AssetRequest.Update()
+        // _unusedAssetRequestList
+        // _sceneAssetRequestList
+        private static void UpdateAssets() {
+            for (var i = 0; i < _loadingAssetRequestList.Count; ++i) {
+                var request = _loadingAssetRequestList[i];
+                // 执行 AssetRequest.Update()
+                // 跳过正在更新的 AssetRequest
+                if (request.Update())
+                    continue;
+                // 移除不在更新中的 AssetRequest
+                _loadingAssetRequestList.RemoveAt(i);
+                --i;
+            }
+
+            // 查找 不需要的 AssetRequest
+            foreach (var item in _allAssetRequestDict) {
+                // 将 isDone && IsUnused 的 AssetRequest 添加到 _unusedAssetRequest
+                if (item.Value.isDone && item.Value.IsUnused()) {
+                    _unusedAssetRequestList.Add(item.Value);
+                }
+            }
+
+            // 清理不需要的 AssetRequest
+            if (_unusedAssetRequestList.Count > 0) {
+                for (var i = 0; i < _unusedAssetRequestList.Count; ++i) {
+                    var request = _unusedAssetRequestList[i];
+                    Log(string.Format("UnloadAsset:{0}", request.name));
+                    // 从 _allAssetRequest 中 移除这个 AssetRequest
+                    _allAssetRequestDict.Remove(request.name);
+                    //  卸载 这个 AssetRequest
+                    request.Unload();
+                }
+                // 每帧清空 当前帧收集的 没用的 AssetRequest
+                _unusedAssetRequestList.Clear();
+            }
+
+            // 处理 SceneAssetRequest
+            for (var i = 0; i < _sceneAssetRequestList.Count; ++i) {
+                var request = _sceneAssetRequestList[i];
+                // 跳过 正在更新的 SceneAssetRequest || 没有使用的 SceneAssetRequest
+                if (request.Update() || !request.IsUnused())
+                    continue;
+                // 从 集合中移除
+                _sceneAssetRequestList.RemoveAt(i);
+                Log(string.Format("UnloadScene:{0}", request.name));
+                // SceneAssetRequest 卸载
+                request.Unload();
+                --i;
+            }
+        }
+
 
         private static void UpdateBundles() {
 

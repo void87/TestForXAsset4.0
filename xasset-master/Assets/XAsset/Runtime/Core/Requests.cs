@@ -317,7 +317,7 @@ namespace libx
         }
     }
 
-    // 
+    // 请求 AssetBundle 里的 Asset (同步)
     public class BundleAssetRequest : AssetRequest {
         // bundle 名 e.g. assets/test/prefab1.unity3d
         protected readonly string assetBundleName;
@@ -364,6 +364,7 @@ namespace libx
         }
     }
 
+    // 请求 AssetBundle 里的 Asset (异步)
     public class BundleAssetRequestAsync : BundleAssetRequest {
         private AssetBundleRequest _request;
 
@@ -645,7 +646,7 @@ namespace libx
 
     
 
-    // 处理 ab 包的 BundleRequest(同步)
+    // 请求 AssetBundle (同步)
     public class BundleRequest : AssetRequest {
         // bundle 名称 e.g. assets/xasset/demo/ui/1loadingpage.unity3d
         public string assetBundleName { get; set; }
@@ -674,7 +675,7 @@ namespace libx
         }
     }
 
-    // 处理 ab 包的 BundleRequestAsync(异步)
+    // 请求 AssetBundle (异步)
     public class BundleRequestAsync : BundleRequest {
         // 相关的 AssetBundleCreateRequest
         private AssetBundleCreateRequest _assetBundleCreateRequest;
