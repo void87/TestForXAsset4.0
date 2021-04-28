@@ -404,6 +404,7 @@ namespace libx {
                 bundleRequest.Load();
                 // 加入 _loadingBundleRequestList
                 _loadingBundleRequestList.Add(bundleRequest);
+
                 Log("LoadBundle: " + url);
             }
 

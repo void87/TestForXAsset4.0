@@ -64,6 +64,7 @@ namespace libx {
         }
 
         // 被引用减1
+        // 只有 Reference 实现了 Release
         public virtual void Release() {
             refCount--;
         }
