@@ -165,20 +165,51 @@ namespace libx {
         internal static void OnLoadManifest(Manifest manifest) {
             _activeVariants.AddRange(manifest.activeVariants);
 
-            var assets = manifest.assetRefArray;
+            // [AssetRef, ...]
+            // e.g.
+            //  bundle 2
+            //  dir 0
+            //  name "Battlefield 4.png"
+            var assetRefArray = manifest.assetRefArray;
+            // e.g.
+            // [ "Assets/Test/Images", "Assets/Test/Prefab1", ...]
             var dirs = manifest.dirs;
-            BundleRef[] bundles = manifest.bundleRefArray;
 
-            foreach (var item in bundles) {
-                _bundleToDependenciesDict[item.name] = Array.ConvertAll(item.deps, id => bundles[id].name);
+            // [BundleRef, ...]
+            // e.g.
+            //  deps [0]
+            //  hash ""
+            //  id 2
+            //  len 589845
+            //  name "assets/test/images/battlefield 4.png.unity3d"
+            BundleRef[] bundleRefArray = manifest.bundleRefArray;
+
+            // 遍历 BundleRef[], 初始化 _bundleToDependenciesDict
+            foreach (BundleRef bundleRef in bundleRefArray) {
+                _bundleToDependenciesDict[bundleRef.bundleName] 
+                    // 获取 BundleRef.deps 包含的 id 对应的 bundle 名
+                    = Array.ConvertAll(bundleRef.deps, id => bundleRefArray[id].bundleName);
             }
 
-            foreach (var item in assets) {
-                var path = string.Format("{0}/{1}", dirs[item.dir], item.name);
-                if (item.bundle >= 0 && item.bundle < bundles.Length) {
-                    _assetToBundleDict[path] = bundles[item.bundle].name;
+            // [AssetRef, ...]
+            // e.g.
+            //  bundle 2
+            //  dir 1
+            //  name "Image1.prefab"
+            foreach (AssetRef assetRef in assetRefArray) {
+                // 将目录名和文件名组合在一起, 形成 path
+                // e.g. 
+                //  dirs[item.dirIndex] = "Assets/Test/Images"
+                //  item.name = "Battlefield 3.png"
+                //  path = "Assets/Test/Images/Battlefield 3.png"
+                var path = string.Format("{0}/{1}", dirs[assetRef.dirIndex], assetRef.name);
+
+                // 遍历 AssetRef[], 初始化 _assetToBundleDict
+                if (assetRef.bundleIndex >= 0 && assetRef.bundleIndex < bundleRefArray.Length) {
+                    // 通过 AssetRef 里的 bundleIndex  获取 asset名 对应的  bundle 名
+                    _assetToBundleDict[path] = bundleRefArray[assetRef.bundleIndex].bundleName;
                 } else {
-                    Debug.LogError(string.Format("{0} bundle {1} not exist.", path, item.bundle));
+                    Debug.LogError(string.Format("{0} bundle {1} not exist.", path, assetRef.bundleIndex));
                 }
             }
         }

@@ -227,8 +227,8 @@ namespace libx
                     // 读取指定路径的 bundle
                     using (var stream = File.OpenRead(path)) {
                         bundleRefs.Add(new BundleRef {
-                            name = bundle,  // bundle 名
-                            id = index, // bundleNameArray 中的索引
+                            bundleName = bundle,  // bundle 名
+                            bundleIndex = index, // bundleNameArray 中的索引
                             // 获取 所有 依赖 的  索引
                             deps = Array.ConvertAll(deps, input => bundleName2IdMap[input]),
                             // 通过 FileStream 获取 文件的 大小
@@ -255,8 +255,8 @@ namespace libx
                 }
 
                 AssetRef assetRef = new AssetRef {
-                    bundle = bundleName2IdMap[item.bundle], // bundle 索引
-                    dir = index,    // 目录索引
+                    bundleIndex = bundleName2IdMap[item.bundle], // bundle 索引
+                    dirIndex = index,    // 目录索引
                     name = Path.GetFileName(path)   // asset名
                 };
                 assetRefList.Add(assetRef);

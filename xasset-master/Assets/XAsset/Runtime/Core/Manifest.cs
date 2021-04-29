@@ -33,17 +33,17 @@ namespace libx {
         // asset名称 e.g. bg_Stage1_02.png
         public string name;
         // asset所属的bundle的索引
-        public int bundle;
+        public int bundleIndex;
         // asset所属的文件夹的索引
-        public int dir;
+        public int dirIndex;
     }
 
     [Serializable]
     public class BundleRef {
         // bundle名称 e.g. assets/test/3stageselect/test1.unity3d
-        public string name;
+        public string bundleName;
         // bundle索引 e.g. 0
-        public int id;
+        public int bundleIndex;
         // bundle依赖 e.g. int[0] 
         // 通过 AssetBundleManifest.GetAllDependencies 获得
         public int[] deps;

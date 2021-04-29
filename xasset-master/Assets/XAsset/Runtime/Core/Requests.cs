@@ -283,6 +283,7 @@ namespace libx
             }
         }
 
+        // ManifestRequest.Update
         internal override bool Update() {
             if (!base.Update()) {
                 return false;
@@ -302,13 +303,17 @@ namespace libx
                 if (bundleRequest.assetBundle == null) {
                     error = "assetBundle == null";
                 } else {
+                    // 从 AssetBundle 中读取 Manifest
                     var manifest = bundleRequest.assetBundle.LoadAsset<Manifest>(assetName);
+
                     if (manifest == null)
                         error = "manifest == null";
                     else
+                        // 处理 Manifest
                         Assets.OnLoadManifest(manifest);
                 }
 
+                // ManifestRequest.loadState = LoadState.Loaded
                 loadState = LoadState.Loaded;
                 return false;
             }
