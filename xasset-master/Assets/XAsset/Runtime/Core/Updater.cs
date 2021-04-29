@@ -57,6 +57,7 @@ namespace libx {
         private Step _step;
 
         [SerializeField] private string baseURL = "http://127.0.0.1:7888/DLC/";
+        // 启动场景
         [SerializeField] private string gameScene = "Game.unity";
         // 是否开启 VirtualFileSystem
         [SerializeField] private bool enableVFS = true;
@@ -585,22 +586,31 @@ namespace libx {
         // 记载游戏场景
         private IEnumerator LoadGameScene() {
             OnMessage("正在初始化");
+
+            // 加载 Manifest
             var manifest = Assets.Initialize();
+
+            // Debug.Log("manifest.isDone: " + manifest.isDone + "," + Time.frameCount);
+
+            // 等待 manifest.isDone
             yield return manifest;
 
-
+            // Debug.Log("manifest.isDone: " + manifest.isDone + "," + Time.frameCount);
 
             if (string.IsNullOrEmpty(manifest.error)) {
                 Assets.AddSearchPath("Assets/XAsset/Demo/Scenes");
+
                 manifest.Release();
 
                 OnProgress(0);
                 OnMessage("加载游戏场景");
-                var scene = Assets.LoadSceneAsync(gameScene, false);
+
+                // 加载场景（异步）
+                var sceneAssetRequest = Assets.LoadSceneAsync(gameScene, false);
 
                 // 等待场景加载完成
-                while (!scene.isDone) {
-                    OnProgress(scene.progress);
+                while (!sceneAssetRequest.isDone) {
+                    OnProgress(sceneAssetRequest.progress);
                     yield return null;
                 }
 

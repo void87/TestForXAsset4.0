@@ -227,18 +227,15 @@ namespace libx
         }
 
         // 是否是 场景文件
-        private static bool IsScene(string asset)
-        {
+        private static bool IsScene(string asset) {
             return asset.EndsWith(".unity");
         }
 
         // 加密与否, 组合扩展名
-        private static string RuledAssetBundleName(string name)
-        {
-            if (nameByHash)
-            {
-                return Utility.GetMD5Hash(name) + Assets.Extension; 
-            } 
+        private static string RuledAssetBundleName(string name) {
+            if (nameByHash) {
+                return Utility.GetMD5Hash(name) + Assets.Extension;
+            }
             return name.Replace("\\", "/").ToLower() + Assets.Extension;
         }
 

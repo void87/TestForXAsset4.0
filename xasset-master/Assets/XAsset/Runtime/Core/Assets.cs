@@ -53,10 +53,8 @@ namespace libx {
 
         #region API
 
-        /// <summary>
-        /// 读取所有资源路径
-        /// </summary>
-        /// <returns></returns>
+        
+        // 从 _assetToBundleDict 中 读取 所有的 asset 名
         public static string[] GetAllAssetPaths() {
             var assets = new List<string>();
             assets.AddRange(_assetToBundleDict.Keys);
@@ -104,9 +102,9 @@ namespace libx {
                 // Assets/Manifest.asset
                 name = ManifestAsset
             };
+
+            // 添加 ManifestRequest
             AddAssetRequest(request);
-
-
             return request;
         }
 
@@ -117,39 +115,54 @@ namespace libx {
             _bundleToDependenciesDict.Clear();
         }
 
+        // Assets._runningScene 当前正在运行的 SceneAssetRequest
         private static SceneAssetRequest _runningScene;
 
+        // 加载场景（异步） Assets.LoadSceneAsync
         public static SceneAssetRequest LoadSceneAsync(string path, bool additive) {
+            // 场景名 e.g. Game.Unity
             if (string.IsNullOrEmpty(path)) {
                 Debug.LogError("invalid path");
                 return null;
             }
 
+            // 带路径的场景名  e.g. Assets/XAsset/Demo/Scenes/Game.unity
             path = GetExistPath(path);
-            var asset = new SceneAssetRequestAsync(path, additive);
+
+
+            var sceneAssetRequest = new SceneAssetRequestAsync(path, additive);
+
+            // 不是附加场景
             if (!additive) {
                 if (_runningScene != null) {
                     _runningScene.Release(); ;
                     _runningScene = null;
                 }
-                _runningScene = asset;
+                _runningScene = sceneAssetRequest;
             }
-            asset.Load();
-            asset.Retain();
-            _sceneAssetRequestList.Add(asset);
+
+
+            sceneAssetRequest.Load();
+            // 被引用加1
+            sceneAssetRequest.Retain();
+            // 添加到 _sceneAssetRequestList
+            _sceneAssetRequestList.Add(sceneAssetRequest);
+
             Log(string.Format("LoadScene:{0}", path));
-            return asset;
+            return sceneAssetRequest;
         }
 
         public static void UnloadScene(SceneAssetRequest scene) {
             scene.Release();
         }
 
+
+        // Assets.LoadAsset（异步）
         public static AssetRequest LoadAssetAsync(string path, Type type) {
             return LoadAsset(path, type, true);
         }
 
-        // 加载 asset Assets.LoadAsset
+        // Assets.LoadAsset（同步）
         public static AssetRequest LoadAsset(string path, Type type) {
             return LoadAsset(path, type, false);
         }
@@ -214,15 +227,16 @@ namespace libx {
             }
         }
 
-        // 当前正在使用的 AssetRequest, 不用会卸载掉
+        // 正在使用的 AssetRequest [asset全路径名， AssetRequest]
         // 只有 ManifestRequest, BundleAssetRequest, BundleAssetRequestAsync
+        // 在 UpdateAssets()中, 不用的 AssetRequest 会从这里移除
         private static Dictionary<string, AssetRequest> _allAssetRequestDict = new Dictionary<string, AssetRequest>();
 
         // 正在加载的 AssetRequest
         // 只有 ManifestRequest, BundleAssetRequest, BundleAssetRequestAsync
         private static List<AssetRequest> _loadingAssetRequestList = new List<AssetRequest>();
 
-        // 专门的 SceneRequest
+        // 专门的 SceneAssetRequest
         private static List<SceneAssetRequest> _sceneAssetRequestList = new List<SceneAssetRequest>();
 
         // 不用的 AssetRequest
@@ -235,18 +249,16 @@ namespace libx {
             UpdateBundles();
         }
 
-
-
         // 添加到 _assetRequestDict, _loadingAssetRequestList
         // 然后 Load
         // 
         // 只会添加 ManifestRequest 和 BundleAssetRequest
-        private static void AddAssetRequest(AssetRequest request) {
-            _allAssetRequestDict.Add(request.name, request);
+        private static void AddAssetRequest(AssetRequest assetRequest) {
+            _allAssetRequestDict.Add(assetRequest.name, assetRequest);
 
-            _loadingAssetRequestList.Add(request);
+            _loadingAssetRequestList.Add(assetRequest);
 
-            request.Load();
+            assetRequest.Load();
         }
 
         // 加载 Asset [Assets].LoadAsset
@@ -259,16 +271,16 @@ namespace libx {
             // 判断这个路径是否存在记录,有就返回
             path = GetExistPath(path);
 
-            AssetRequest request;
-            if (_allAssetRequestDict.TryGetValue(path, out request)) {
-                request.Retain();
-                _loadingAssetRequestList.Add(request);
-                return request;
+            AssetRequest assetRequest;
+            if (_allAssetRequestDict.TryGetValue(path, out assetRequest)) {
+                assetRequest.Retain();
+                _loadingAssetRequestList.Add(assetRequest);
+                return assetRequest;
             }
 
             string assetBundleName;
             if (GetAssetBundleName(path, out assetBundleName)) {
-                request = async
+                assetRequest = async
                     ? new BundleAssetRequestAsync(assetBundleName)
                     : new BundleAssetRequest(assetBundleName);
             } else {
@@ -277,17 +289,20 @@ namespace libx {
                     path.StartsWith("file://", StringComparison.Ordinal) ||
                     path.StartsWith("ftp://", StringComparison.Ordinal) ||
                     path.StartsWith("jar:file://", StringComparison.Ordinal))
-                    request = new WebAssetRequest();
+                    assetRequest = new WebAssetRequest();
                 else
-                    request = new AssetRequest();
+                    assetRequest = new AssetRequest();
             }
 
-            request.name = path;
-            request.assetType = type;
-            AddAssetRequest(request);
-            request.Retain();
+            assetRequest.name = path;
+            assetRequest.assetType = type;
+
+            // 添加 BundleAssetRequest
+            AddAssetRequest(assetRequest);
+
+            assetRequest.Retain();
             Log(string.Format("LoadAsset:{0}", path));
-            return request;
+            return assetRequest;
         }
 
         #endregion
@@ -295,6 +310,7 @@ namespace libx {
         #region Paths
 
         // 附加的搜索路径
+        // e.g. Assets/XAsset/Demo/Scenes
         private static List<string> _searchPaths = new List<string>();
 
 
@@ -339,7 +355,8 @@ namespace libx {
 
         private static readonly int MAX_BUNDLES_PERFRAME = 0;
 
-        // 已经请求过的 BundleRequest [bunlde全路径名， BundleRequest]
+        // 正在使用的 BundleRequest [bunlde全路径名， BundleRequest]
+        // 在 UpdateBundles()中, 不用的 BundleRequest 会从这里移除
         private static Dictionary<string, BundleRequest> _bundleRequestDict = new Dictionary<string, BundleRequest>();
 
         // 正在加载的 BundleRequest
@@ -353,12 +370,16 @@ namespace libx {
 
         private static List<string> _activeVariants = new List<string>();
 
+        // 通过读取 Manifest 获取.
         // [asset名, bundle名] 
         // e.g. [Assets/XAsset/Demo/UI/1LoadingPage/Progress1.png, assets/xasset/demo/ui/1loadingpage.unity3d]
         private static Dictionary<string, string> _assetToBundleDict = new Dictionary<string, string>();
+        //  通过读取 Manifest 获取
         // [bundle名, 依赖名]
+        // e.g. 
         private static Dictionary<string, string[]> _bundleToDependenciesDict = new Dictionary<string, string[]>();
 
+        // 通过 asset 名 获取 bundle名
         internal static bool GetAssetBundleName(string path, out string assetBundleName) {
             return _assetToBundleDict.TryGetValue(path, out assetBundleName);
         }
@@ -397,6 +418,7 @@ namespace libx {
             assetBundleName = RemapVariantName(assetBundleName);
 
             // 路径 +  ab名
+            // e.g. C:/Users/void8/AppData/LocalLow/xasset/xasset/DLC/assets/xasset/demo/scenes.unity3d
             var url = GetDataPath(assetBundleName) + assetBundleName;
 
             BundleRequest bundleRequest;
