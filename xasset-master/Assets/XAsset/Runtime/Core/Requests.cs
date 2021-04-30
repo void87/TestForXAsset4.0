@@ -282,9 +282,13 @@ namespace libx
                 // ManifestRequest.loadState 设置为 LoadState.LoadAssetBundle
                 loadState = LoadState.LoadAssetBundle;
             } else {
-                base.Load();
+                // 原有代码，注释掉了, 不能在 !runtimeMode 下 加载资源
+                // loadState = LoadState.Loaded; 
 
-                //loadState = LoadState.Loaded;
+                // 加入以下代码，可以在 !runtimeMode 下加载资源 黄鑫
+                assetType = typeof(ScriptableObject);
+                base.Load();
+                Assets.OnLoadManifest(asset as Manifest);
             }
         }
 

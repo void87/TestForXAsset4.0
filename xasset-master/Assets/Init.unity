@@ -887,7 +887,7 @@ MonoBehaviour:
   baseURL: http://192.168.5.108/DLC/
   gameScene: Game.unity
   enableVFS: 0
-  development: 1
+  development: 0
 --- !u!114 &539367457
 MonoBehaviour:
   m_ObjectHideFlags: 0

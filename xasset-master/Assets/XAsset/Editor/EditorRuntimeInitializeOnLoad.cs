@@ -39,6 +39,7 @@ namespace libx
             Debug.Log("RuntimeInitalizeOnLoadMethod");
 
             // e.g. DLC/Windows\\
+            // runtimeMode 下 会替换成 S 目录或者 P 目录
             Assets.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
             // 设置 Assets.loadDelegate 用于 !Assets.runtimeMode
             Assets.loadDelegate = AssetDatabase.LoadAssetAtPath;
