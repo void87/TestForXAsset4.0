@@ -32,6 +32,7 @@ namespace libx {
         // 引用的 Object, 没有用到(private)
         private List<Object> _requires;
         
+        // Reference.IsUnused()
         public bool IsUnused() {
 
             // 下面的逻辑没有用到
@@ -59,24 +60,27 @@ namespace libx {
         public int refCount;
 
         // 被引用加1
+        // 只有 Reference 实现了 Retain
+        // Reference.Retain()
         public virtual void Retain() {
             refCount++;
         }
 
         // 被引用减1
         // 只有 Reference 实现了 Release
+        // Reference.Release()
         public virtual void Release() {
             refCount--;
         }
 
-        // 没有用到
+        // 没有用到 Reference.checkRequires
         private bool checkRequires {
             get {
                 return _requires != null;
             }
         }
 
-        // 没有用到
+        // 没有用到 Reference.Require()
         public void Require(Object obj) {
             if (_requires == null)
                 _requires = new List<Object>();
@@ -85,7 +89,7 @@ namespace libx {
             Retain();
         }
 
-        // 没有用到
+        // 没有用到 Reference.Dequire()
         public void Dequire(Object obj) {
             if (_requires == null)
                 return;

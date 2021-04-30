@@ -45,11 +45,12 @@ namespace libx
         // 
         //  WebBundleRequest.Load()
         LoadAssetBundle,
-        // 异步加载 AssetBundle 才会有这个状态
+        // 异步加载时 才会有这个状态
         // SceneAssetRequestAsync.LoadScene()
         //      SceneManager.LoadSceneAsync()
         // BundleRequestAsync.Load()
         //      AssetBundle.LoadFromFileAsync()
+        // 
         // WebAssetRequest.Load()
         //      UnityWebRequest.SendWebRequest()
         LoadAsset,
@@ -96,6 +97,7 @@ namespace libx
 
         public AssetRequest() {
             asset = null;
+            // AssetRequest 初始化时会设置 LoadState.Init
             loadState = LoadState.Init;
         }
 
@@ -264,6 +266,8 @@ namespace libx
             }
         }
 
+        
+        // ManifestRequest.Load()
         internal override void Load() {
             // 只获取 Assets/Manifest 的 文件名 Manifest.asset
             assetName = Path.GetFileName(name);
@@ -278,7 +282,9 @@ namespace libx
                 // ManifestRequest.loadState 设置为 LoadState.LoadAssetBundle
                 loadState = LoadState.LoadAssetBundle;
             } else {
-                loadState = LoadState.Loaded;
+                base.Load();
+
+                //loadState = LoadState.Loaded;
             }
         }
 
@@ -348,13 +354,13 @@ namespace libx
         // 包含的  BundleRequest
         protected BundleRequest bundleRequest;
         // 依赖的 Bundle
-        protected List<BundleRequest> children = new List<BundleRequest>();
+        protected List<BundleRequest> childrenBundleRequestList = new List<BundleRequest>();
 
         public BundleAssetRequest(string bundle) {
             assetBundleName = bundle;
         }
 
-        // 加载 AssetBudnle
+        // BundleAssetRequest.Load() 加载 AssetBudnle
         internal override void Load() {
             
             bundleRequest = Assets.LoadBundle(assetBundleName);
@@ -362,13 +368,20 @@ namespace libx
             var names = Assets.GetAllDependencies(assetBundleName);
 
             foreach (var item in names) {
-                children.Add(Assets.LoadBundle(item));
+                childrenBundleRequestList.Add(Assets.LoadBundle(item));
             }
 
+            // 获取文件名 不要路径 e.g. Title2_bg.png
             var assetName = Path.GetFileName(name);
+            // AssetBundle
             var ab = bundleRequest.assetBundle;
-            if (ab != null) asset = ab.LoadAsset(assetName, assetType);
-            if (asset == null) error = "asset == null";
+
+            if (ab != null)
+                // 加载 AssetBundle 里的 asset, 
+                asset = ab.LoadAsset(assetName, assetType);
+
+            if (asset == null)
+                error = "asset == null";
 
             loadState = LoadState.Loaded;
         }
@@ -383,12 +396,12 @@ namespace libx
                 bundleRequest = null;
             }
 
-            if (children.Count > 0) {
+            if (childrenBundleRequestList.Count > 0) {
                 // 包含的 依赖 BundleRequest 的 引用减一
-                foreach (var item in children) {
+                foreach (var item in childrenBundleRequestList) {
                     item.Release();
                 }
-                children.Clear();
+                childrenBundleRequestList.Clear();
             }
 
             asset = null;
@@ -415,12 +428,12 @@ namespace libx
                 if (bundleRequest == null) return 1;
 
                 var value = bundleRequest.progress;
-                var max = children.Count;
+                var max = childrenBundleRequestList.Count;
                 if (max <= 0)
                     return value * 0.3f;
 
                 for (var i = 0; i < max; i++) {
-                    var item = children[i];
+                    var item = childrenBundleRequestList[i];
                     value += item.progress;
                 }
 
@@ -438,19 +451,28 @@ namespace libx
             return false;
         }
 
+        // BundleAssetRequestAsync.Update()
         internal override bool Update() {
-            if (!base.Update()) return false;
+            if (!base.Update())
+                return false;
 
-            if (loadState == LoadState.Init) return true;
+            if (loadState == LoadState.Init)
+                return true;
 
             if (_request == null) {
-                if (!bundleRequest.isDone) return true;
-                if (OnError(bundleRequest)) return false;
+                if (!bundleRequest.isDone)
+                    return true;
 
-                for (var i = 0; i < children.Count; i++) {
-                    var item = children[i];
-                    if (!item.isDone) return true;
-                    if (OnError(item)) return false;
+                if (OnError(bundleRequest))
+                    return false;
+
+                for (var i = 0; i < childrenBundleRequestList.Count; i++) {
+                    var item = childrenBundleRequestList[i];
+                    if (!item.isDone)
+                        return true;
+
+                    if (OnError(item))
+                        return false;
                 }
 
                 var assetName = Path.GetFileName(name);
@@ -474,11 +496,16 @@ namespace libx
             return true;
         }
 
+        // BundleAssetRequestAsync.Load()
         internal override void Load() {
+            // 通过 bundle名，创建 BundleRequest
             bundleRequest = Assets.LoadBundleAsync(assetBundleName);
+            // 通过 bundle名，获取 依赖的 bundle集合
             var bundles = Assets.GetAllDependencies(assetBundleName);
+
+            // 通过每个依赖的 bundle 名， 创建 BundleRequest
             foreach (var item in bundles) {
-                children.Add(Assets.LoadBundleAsync(item));
+                childrenBundleRequestList.Add(Assets.LoadBundleAsync(item));
             }
 
             // BundleAssetRequestAsync.loadState 设置为 LoadState.LoadAssetBundle
@@ -493,10 +520,11 @@ namespace libx
             base.Unload();
         }
 
+        // BundleAssetRequestAsync.LoadImmediate()
         internal override void LoadImmediate() {
             bundleRequest.LoadImmediate();
 
-            foreach (var item in children) {
+            foreach (var item in childrenBundleRequestList) {
                 item.LoadImmediate();
             }
 
@@ -514,7 +542,7 @@ namespace libx
     public class SceneAssetRequest : AssetRequest {
         // 场景名称 e.g. Game
         protected readonly string sceneName;
-        // ab包名 e.g. assets/xasset/demo/scenes.unity3d
+        // 场景所在的 ab包名 e.g. assets/xasset/demo/scenes.unity3d
         public string assetBundleName;
         // 包含的 BundleRequest
         protected BundleRequest bundleRequest;
@@ -537,6 +565,7 @@ namespace libx
             get { return 1; }
         }
 
+        // SceneAssetRequest.Load()
         internal override void Load() {
             if (!string.IsNullOrEmpty(assetBundleName)) {
                 bundleRequest = Assets.LoadBundle(assetBundleName);
@@ -577,7 +606,7 @@ namespace libx
 
     // 专门处理场景的 [SceneAsset] Request Async
     public class SceneAssetRequestAsync : SceneAssetRequest {
-        // 官方API
+        // 由 SceneManager.LoadSceneAsync 创建
         private AsyncOperation _asyncOperation;
 
         public SceneAssetRequestAsync(string path, bool addictive)
@@ -608,6 +637,7 @@ namespace libx
             }
         }
 
+        // SceneAssetRequestAsync.OnError()
         private bool OnError(BundleRequest bundleRequest) {
             error = bundleRequest.error;
             if (!string.IsNullOrEmpty(error)) {
@@ -618,11 +648,15 @@ namespace libx
             return false;
         }
 
+        // SceneAssetRequestAsync.Update()
         internal override bool Update() {
-            if (!base.Update()) return false;
+            if (!base.Update())
+                return false;
 
-            if (loadState == LoadState.Init) return true;
+            if (loadState == LoadState.Init)
+                return true;
 
+            // ab 包加载完后,SceneManager.LoadSceneAsync 才会创建 _asyncOperation
             if (_asyncOperation == null) {
                 if (bundleRequest == null) {
                     error = "bundle == null";
@@ -631,21 +665,27 @@ namespace libx
                     return false;
                 }
 
-                if (!bundleRequest.isDone) return true;
+                if (!bundleRequest.isDone)
+                    return true;
 
-                if (OnError(bundleRequest)) return false;
+                if (OnError(bundleRequest))
+                    return false;
 
                 for (var i = 0; i < children.Count; i++) {
                     var item = children[i];
-                    if (!item.isDone) return true;
-                    if (OnError(item)) return false;
+                    if (!item.isDone)
+                        return true;
+                    if (OnError(item))
+                        return false;
                 }
 
+                // SceneAssetRequestAsync.LoadScene()
                 LoadScene();
 
                 return true;
             }
 
+            // AsyncOperation.isDone
             if (_asyncOperation.isDone) {
                 loadState = LoadState.Loaded;
                 return false;
@@ -654,13 +694,16 @@ namespace libx
             return true;
         }
 
+        // SceneAssetRequestAsync.LoadScene()
         private void LoadScene() {
             try {
                 _asyncOperation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+                
                 loadState = LoadState.LoadAsset;
             } catch (Exception e) {
                 Debug.LogException(e);
                 error = e.Message;
+
                 loadState = LoadState.Loaded;
             }
         }
@@ -734,9 +777,12 @@ namespace libx
 
         public override float progress {
             get {
-                if (isDone) return 1;
-                if (loadState == LoadState.Init) return 0;
-                if (_assetBundleCreateRequest == null) return 1;
+                if (isDone)
+                    return 1;
+                if (loadState == LoadState.Init)
+                    return 0;
+                if (_assetBundleCreateRequest == null)
+                    return 1;
                 return _assetBundleCreateRequest.progress;
             }
         }
@@ -747,7 +793,6 @@ namespace libx
                 // 返回 false 表示不需要更新
                 return false;
             }
-
             
             if (loadState == LoadState.LoadAsset) {
                 // 也可以用 协程 查看 isDone

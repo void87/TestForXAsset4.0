@@ -38,27 +38,43 @@ namespace libx
         private static void OnInitialize() {
             Debug.Log("RuntimeInitalizeOnLoadMethod");
 
+            // e.g. DLC/Windows\\
             Assets.basePath = BuildScript.outputPath + Path.DirectorySeparatorChar;
+            // 设置 Assets.loadDelegate 用于 !Assets.runtimeMode
             Assets.loadDelegate = AssetDatabase.LoadAssetAtPath;
-            var assets = new List<string>();
+
+            // 读取 BuildRules
             var rules = BuildScript.GetBuildRules();
-            foreach (var asset in rules.scenesInBuild) {
-                var path = AssetDatabase.GetAssetPath(asset);
+
+            List<string> assetNameList = new List<string>();
+            // 遍历 BuildRules.scenesInBuild
+            foreach (SceneAsset sceneAsset in rules.scenesInBuild) {
+                // 获取 场景的路径
+                // e.g. Assets/XAsset/Demo/Scenes/Game.unity
+                var path = AssetDatabase.GetAssetPath(sceneAsset);
                 if (string.IsNullOrEmpty(path)) {
                     continue;
                 }
-                assets.Add(path);
+                // 添加到 assetNameList
+                assetNameList.Add(path);
             }
-            foreach (var rule in rules.rules) {
-                if (rule.searchPattern.Contains("*.unity")) {
-                    assets.AddRange(rule.GetAssets());
+
+            // 遍历 BuildRule, 搜索 .unity
+            foreach (BuildRule buildRule in rules.rules) {
+                if (buildRule.searchPattern.Contains("*.unity")) {
+                    // 添加到 assetNameList
+                    assetNameList.AddRange(buildRule.GetAssets());
                 }
             }
-            var scenes = new EditorBuildSettingsScene[assets.Count];
-            for (var index = 0; index < assets.Count; index++) {
-                var asset = assets[index];
+
+
+            // 设置 Scenes In Build
+            var scenes = new EditorBuildSettingsScene[assetNameList.Count];
+            for (var index = 0; index < assetNameList.Count; index++) {
+                var asset = assetNameList[index];
                 scenes[index] = new EditorBuildSettingsScene(asset, true);
             }
+
             EditorBuildSettings.scenes = scenes;
         }
 

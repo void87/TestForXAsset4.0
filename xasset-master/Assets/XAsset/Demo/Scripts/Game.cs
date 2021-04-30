@@ -20,12 +20,14 @@ public class Game : MonoBehaviour {
         StartCoroutine(LoadAsset());
     }
 
+    // Game.LoadSprite
     AssetRequest LoadSprite(string path) {
         var request = Assets.LoadAsset(path, typeof(Sprite));
         _requests.Add(request);
         return request;
     }
 
+    // 加载全部
     public void OnLoadAll() {
         StartCoroutine(LoadAll(_assets.Length));
     }
@@ -47,11 +49,14 @@ public class Game : MonoBehaviour {
                 count++;
             }
         }
+
+
         yield return new WaitUntil(() => list.TrueForAll(o => {
             return o.isDone;
         }));
     }
 
+    // 加载完成回调
     private void OnCompleted(AssetRequest request) {
         if (!string.IsNullOrEmpty(request.error)) {
             request.Release();
@@ -70,14 +75,20 @@ public class Game : MonoBehaviour {
             yield break;
         }
         var path = _assets[_optionIndex];
+        // 获取后缀名
         var ext = Path.GetExtension(path);
+
         if (ext.Equals(".png", StringComparison.OrdinalIgnoreCase)) {
+            // Game.LoadSprite
             var request = LoadSprite(path);
             yield return request;
+
             if (!string.IsNullOrEmpty(request.error)) {
+                // 有错误 被引用减1
                 request.Release();
                 yield break;
             }
+
             var go = Instantiate(temp.gameObject, temp.transform.parent);
             go.SetActive(true);
             go.name = request.asset.name;
@@ -104,6 +115,7 @@ public class Game : MonoBehaviour {
         }
     }
 
+    // 卸载
     public void OnUnload() {
         _optionIndex = 0;
         StartCoroutine(UnloadAssets());
@@ -115,6 +127,7 @@ public class Game : MonoBehaviour {
         }
         _gos.Clear();
 
+        // 减少引用
         foreach (var request in _requests) {
             request.Release();
         }
@@ -134,6 +147,7 @@ public class Game : MonoBehaviour {
         dropdown.onValueChanged.AddListener(OnDropdown);
     }
 
+    // 下拉框事件
     private void OnDropdown(int index) {
         _optionIndex = index;
     }

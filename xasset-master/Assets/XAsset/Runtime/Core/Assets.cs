@@ -55,6 +55,7 @@ namespace libx {
 
         
         // 从 _assetToBundleDict 中 读取 所有的 asset 名
+        // Manifest 已经读取完毕，有数据
         public static string[] GetAllAssetPaths() {
             var assets = new List<string>();
             assets.AddRange(_assetToBundleDict.Keys);
@@ -105,6 +106,11 @@ namespace libx {
 
             // 添加 ManifestRequest
             AddAssetRequest(request);
+
+            // 黄鑫 2021年4月30日
+            request.Retain();
+            Log(string.Format("LoadManifestAsset:{0}", ManifestAsset));
+
             return request;
         }
 
@@ -143,7 +149,7 @@ namespace libx {
 
 
             sceneAssetRequest.Load();
-            // 被引用加1
+            // SceneAssetRequest 被引用加1
             sceneAssetRequest.Retain();
             // 添加到 _sceneAssetRequestList
             _sceneAssetRequestList.Add(sceneAssetRequest);
@@ -273,16 +279,21 @@ namespace libx {
 
             AssetRequest assetRequest;
             if (_allAssetRequestDict.TryGetValue(path, out assetRequest)) {
+                // 从字典取出时， 被引用加1
                 assetRequest.Retain();
+                // 加入到正在加载的 AssetRequest 集合
                 _loadingAssetRequestList.Add(assetRequest);
+                // 字典里找到了直接返回这个 AssetRequest
                 return assetRequest;
             }
 
+            // 上面没有找到这个 assetRequest
             string assetBundleName;
             if (GetAssetBundleName(path, out assetBundleName)) {
                 assetRequest = async
                     ? new BundleAssetRequestAsync(assetBundleName)
                     : new BundleAssetRequest(assetBundleName);
+            // 暂时没有用到
             } else {
                 if (path.StartsWith("http://", StringComparison.Ordinal) ||
                     path.StartsWith("https://", StringComparison.Ordinal) ||
@@ -299,9 +310,12 @@ namespace libx {
 
             // 添加 BundleAssetRequest
             AddAssetRequest(assetRequest);
-
+            // 被引用加1
             assetRequest.Retain();
+
             Log(string.Format("LoadAsset:{0}", path));
+
+
             return assetRequest;
         }
 

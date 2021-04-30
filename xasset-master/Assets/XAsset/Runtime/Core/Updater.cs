@@ -61,6 +61,7 @@ namespace libx {
         [SerializeField] private string gameScene = "Game.unity";
         // 是否开启 VirtualFileSystem
         [SerializeField] private bool enableVFS = true;
+        // 是否是开发者模式
         [SerializeField] private bool development;
 
         // UpdateScreen
@@ -583,7 +584,7 @@ namespace libx {
             StartCoroutine(LoadGameScene());
         }
 
-        // 记载游戏场景
+        // 加载游戏场景协程
         private IEnumerator LoadGameScene() {
             OnMessage("正在初始化");
 
